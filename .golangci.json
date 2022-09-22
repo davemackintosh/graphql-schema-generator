@@ -1,0 +1,54 @@
+{
+	"run": {
+		"go": "1.18",
+		"allow-parallel-runners": true
+	},
+	"issues": {
+		"fix": true,
+		"new-from-rev": "HEAD"
+	},
+	"linters": {
+		"enable-all": false,
+		"presets": [
+			"bugs",
+			"comment",
+			"complexity",
+			"error",
+			"format",
+			"import",
+			"module",
+			"performance",
+			"style",
+			"test",
+			"unused"
+		],
+		"disable": [
+			"ifshort",
+			"gci",
+			"deadcode",
+			"varcheck",
+			"nosnakecase",
+			"gomnd",
+			"golint",
+			"maligned",
+			"interfacer",
+			"scopelint",
+			"exhaustivestruct",
+			"exhaustruct",
+			"paralleltest",
+			"varnamelen",
+			"lll",
+			"funlen",
+			"bodyclose",
+			"contextcheck",
+			"nilerr",
+			"noctx",
+			"rowserrcheck",
+			"sqlclosecheck",
+			"structcheck",
+			"unparam",
+			"wastedassign",
+			"tparallel"
+		]
+	}
+}
