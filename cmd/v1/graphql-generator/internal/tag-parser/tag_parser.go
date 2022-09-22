@@ -53,9 +53,15 @@ func ParseTag(tag string, fieldName string) (*Tag, error) {
 		inQuotes     bool
 		escaped      bool
 		inArray      bool
+		prevChar     rune
 	)
 
 	for _, char := range tag {
+		if string(char) == " " && string(prevChar) == "," {
+			// Skip if we have a space after a comma.
+			continue
+		}
+
 		if char == '[' {
 			inArray = true
 		}
