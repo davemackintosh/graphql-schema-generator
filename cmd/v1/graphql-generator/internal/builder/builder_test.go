@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/warpspeedboilerplate/graphql-schema-generator/cmd/v1/graphql-generator/internal/builder"
 	"github.com/warpspeedboilerplate/graphql-schema-generator/cmd/v1/graphql-generator/internal/ptr"
 )
 
@@ -50,16 +51,16 @@ func TestBuilder(t *testing.T) {
 	}{
 		{
 			name: "TestBuilder_Struct",
-			actual: builder.NewGraphQLSchemaBuilder().
-				WithType(User{}).
+			actual: builder.NewGraphQLSchemaBuilder(nil).
+				AddType(User{}).
 				Build(),
 			expected: expectedUserSchema,
 		},
 		{
-			name: "TestBuilder_Struct_With_Query",
+			name: "TestBuilder_Struct_Add_Query",
 			actual: builder.NewGraphQLSchemaBuilder(nil).
-				WithType(User{}).
-				WithQuery("currentUser", "User", ptr.Of("Get a user by ID")).
+				AddType(User{}).
+				AddQuery("currentUser", "User", ptr.Of("Get a user by ID")).
 				Returns("User", ptr.Of("The user")).
 				Build(),
 			expected: fmt.Sprintf(`%s
@@ -70,10 +71,10 @@ func TestBuilder(t *testing.T) {
 			}`, expectedUserSchema),
 		},
 		{
-			name: "TestBuilder_Struct_With_Mutation",
+			name: "TestBuilder_Struct_Add_Mutation",
 			actual: builder.NewGraphQLSchemaBuilder(nil).
-				WithType(User{}).
-				WithMutation("createUser", "User", ptr.Of("Create a new user")).
+				AddType(User{}).
+				AddMutation("createUser", "User", ptr.Of("Create a new user")).
 				Returns("User", ptr.Of("The user")).
 				Build(),
 			expected: fmt.Sprintf(`%s
@@ -84,15 +85,13 @@ func TestBuilder(t *testing.T) {
 			}`, expectedUserSchema),
 		},
 		{
-			name: "TestBuilder_Struct_With_Options",
-			actual: builder.NewGraphQLSchemaBuilder(&builder.GraphqlSchemaBuilderOptions{
-				GenerateInputTypes: ptr.Of(true),
-				WithFragments:      ptr.Of(true),
+			name: "TestBuilder_Struct_Add_Options",
+			actual: builder.NewGraphQLSchemaBuilder(&builder.GraphQLSchemaBuilderOptions{
 				Writer: ptr.Of(func(typeName, s string) error {
 					return nil
 				}),
 			}).
-				WithType(User{}).
+				AddType(User{}).
 				Build(),
 			expected: fmt.Sprintf(`%s
 
