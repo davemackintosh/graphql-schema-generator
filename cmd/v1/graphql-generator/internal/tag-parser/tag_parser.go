@@ -58,6 +58,7 @@ func ParseTag(tag string, fieldName string) (*Tag, error) {
 
 	for _, char := range tag {
 		if string(char) == " " && string(prevChar) == "," {
+			prevChar = char
 			// Skip if we have a space after a comma.
 			continue
 		}
@@ -73,6 +74,7 @@ func ParseTag(tag string, fieldName string) (*Tag, error) {
 		if char == '\\' {
 			escaped = true
 
+			prevChar = char
 			continue
 		}
 
@@ -83,12 +85,19 @@ func ParseTag(tag string, fieldName string) (*Tag, error) {
 		if char == ',' && !inQuotes && !inArray {
 			if currentKey == "" {
 				currentKey = currentValue
+				currentValue = "true"
 			}
 
-			tagOptions[currentKey] = currentValue
+			if _, ok := tagOptions["name"]; !ok {
+				tagOptions["name"] = currentKey
+			} else {
+				tagOptions[currentKey] = currentValue
+			}
+
 			currentKey = ""
 			currentValue = ""
 
+			prevChar = char
 			continue
 		}
 
@@ -96,10 +105,12 @@ func ParseTag(tag string, fieldName string) (*Tag, error) {
 			currentKey = currentValue
 			currentValue = ""
 
+			prevChar = char
 			continue
 		}
 
 		currentValue += string(char)
+		prevChar = char
 	}
 
 	tagOptions[currentKey] = currentValue

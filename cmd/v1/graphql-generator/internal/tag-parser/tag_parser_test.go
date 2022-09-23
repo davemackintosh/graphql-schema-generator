@@ -27,9 +27,9 @@ func TestGetTagsFromStruct(t *testing.T) {
 				"taggedField": {
 					Name: "taggedField",
 					Options: map[string]string{
-						"omitempty":   "omitempty",
+						"omitempty":   "true",
 						"description": "This is a tagged field",
-						"decorators":  "[+doc(description: \"This field is tagged.\"), +requireAuthRole(role: \"admin\"))]",
+						"decorators":  "[+doc(description: \"This field is tagged.\"),+requireAuthRole(role: \"admin\"))]",
 						"name":        "taggedField",
 					},
 				},
