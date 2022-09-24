@@ -65,10 +65,10 @@ func TestBuilder(t *testing.T) {
 				Build(),
 			expected: fmt.Sprintf(`%s
 
-			type Query {
-				// Get a user by ID
-				currentUser: User
-			}`, expectedUserSchema),
+type Query {
+	// Get a user by ID
+	currentUser: User
+}`, expectedUserSchema),
 		},
 		{
 			name: "TestBuilder_Struct_Add_Mutation",
@@ -79,10 +79,10 @@ func TestBuilder(t *testing.T) {
 				Build(),
 			expected: fmt.Sprintf(`%s
 
-			type Mutation {
-				// Create a new user
-				createUser($input: UserInput!): User
-			}`, expectedUserSchema),
+type Mutation {
+	// Create a new user
+	createUser($input: UserInput!): User
+}`, expectedUserSchema),
 		},
 		{
 			name: "TestBuilder_Struct_Add_Options",
@@ -95,10 +95,10 @@ func TestBuilder(t *testing.T) {
 				Build(),
 			expected: fmt.Sprintf(`%s
 
-			type Mutation {
-				// Create a new user
-				createUser($input: UserInput!): User
-			}`, expectedUserSchema),
+type Mutation {
+	// Create a new user
+	createUser($input: UserInput!): User
+}`, expectedUserSchema),
 		},
 	}
 
