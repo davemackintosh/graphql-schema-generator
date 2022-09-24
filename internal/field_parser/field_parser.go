@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"reflect"
 
-	tagparser "github.com/warpspeedboilerplate/graphql-schema-generator/cmd/v1/graphql-generator/internal/tag-parser"
+	tagparser "github.com/warpspeedboilerplate/graphql-schema-generator/internal/tag-parser"
 )
 
 type Field struct {
@@ -35,8 +35,8 @@ func ParseField(field reflect.StructField) (*Field, error) {
 }
 
 // GetFieldsFromStruct returns a map of field names to Fields for a given struct.
-func GetFieldsFromStruct(structType reflect.Type) (*map[string]*Field, error) {
-	fields := make(map[string]*Field)
+func GetFieldsFromStruct(structType reflect.Type) (*[]*Field, error) {
+	var fields []*Field
 
 	for i := 0; i < structType.NumField(); i++ {
 		field := structType.Field(i)
@@ -46,7 +46,7 @@ func GetFieldsFromStruct(structType reflect.Type) (*map[string]*Field, error) {
 			return nil, err
 		}
 
-		fields[field.Name] = fieldParserType
+		fields = append(fields, fieldParserType)
 	}
 
 	return &fields, nil

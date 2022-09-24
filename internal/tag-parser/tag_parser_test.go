@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	tagparser "github.com/warpspeedboilerplate/graphql-schema-generator/cmd/v1/graphql-generator/internal/tag-parser"
+	tagparser "github.com/warpspeedboilerplate/graphql-schema-generator/internal/tag-parser"
 )
 
 type TestStruct struct {
@@ -26,7 +26,7 @@ func TestGetTagsFromStruct(t *testing.T) {
 			want: map[string]tagparser.Tag{
 				"taggedField": {
 					Name: "taggedField",
-					Options: map[string]string{
+					Options: &map[string]string{
 						"omitempty":   "true",
 						"description": "This is a tagged field",
 						"decorators":  "[+doc(description: \"This field is tagged.\"),+requireAuthRole(role: \"admin\"))]",

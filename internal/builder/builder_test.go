@@ -5,8 +5,11 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/warpspeedboilerplate/graphql-schema-generator/cmd/v1/graphql-generator/internal/builder"
-	"github.com/warpspeedboilerplate/graphql-schema-generator/cmd/v1/graphql-generator/internal/ptr"
+	"github.com/warpspeedboilerplate/graphql-schema-generator/internal/builder"
+	fieldparser "github.com/warpspeedboilerplate/graphql-schema-generator/internal/field_parser"
+	"github.com/warpspeedboilerplate/graphql-schema-generator/internal/ptr"
+	structparser "github.com/warpspeedboilerplate/graphql-schema-generator/internal/struct_parser"
+	tagparser "github.com/warpspeedboilerplate/graphql-schema-generator/internal/tag-parser"
 )
 
 type Roles string
@@ -25,64 +28,90 @@ type User struct {
 	Roles    Roles   `graphql:"roles, description=The roles of the user"`
 }
 
-const expectedUserSchema = `enum Roles {
-	ADMIN
-	USER
-}
-
-type User {
-	// The ID of the User
-	id: String! @doc(description: "The ID of the user")
-	// The username of the User
-	username: String! @doc(description: "The username of the user") @unique()
-	// The email of the User
-	email: String @doc(description: "The email of the user")
-	// The phone number of the User
-	phone: String @doc(description: "The phone number of the user")
-	// The roles of the User
-	roles: Roles! @doc(description: "The roles of the user")
-}`
-
 func TestBuilder(t *testing.T) {
 	tests := []struct {
 		name     string
-		expected string
-		actual   string
+		expected *builder.GraphQLSchemaBuilder
+		actual   *builder.GraphQLSchemaBuilder
 	}{
 		{
 			name: "TestBuilder_Struct",
 			actual: builder.NewGraphQLSchemaBuilder(nil).
-				AddType(User{}).
-				Build(),
-			expected: expectedUserSchema,
+				AddType(User{}),
+			expected: &builder.GraphQLSchemaBuilder{
+				Types: &[]structparser.Struct{
+					{
+						Name: "User",
+						Fields: &[]*fieldparser.Field{
+							{
+								Name: "id",
+								Type: "String",
+								ParsedTag: &tagparser.Tag{
+									Name: "id",
+									Options: &map[string]string{
+										"description": "The ID of the user",
+									},
+								},
+							},
+							{
+								Name: "username",
+								Type: "String",
+								ParsedTag: &tagparser.Tag{
+									Name: "username",
+									Options: &map[string]string{
+										"description": "The username of the user",
+										"decorators":  "[+unique()]",
+									},
+								},
+							},
+							{
+								Name: "email",
+								Type: "String",
+								ParsedTag: &tagparser.Tag{
+									Name: "email",
+									Options: &map[string]string{
+										"description": "The email of the user",
+									},
+								},
+							},
+							{
+								Name: "phone",
+								Type: "String",
+								ParsedTag: &tagparser.Tag{
+									Name: "phone",
+									Options: &map[string]string{
+										"description": "The phone number of the user",
+									},
+								},
+							},
+							{
+								Name: "roles",
+								Type: "Roles",
+								ParsedTag: &tagparser.Tag{
+									Name: "roles",
+									Options: &map[string]string{
+										"description": "The roles of the user",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
 		},
 		{
 			name: "TestBuilder_Struct_Add_Query",
 			actual: builder.NewGraphQLSchemaBuilder(nil).
 				AddType(User{}).
 				AddQuery("currentUser", "User", ptr.Of("Get a user by ID")).
-				Returns("User", ptr.Of("The user")).
-				Build(),
-			expected: fmt.Sprintf(`%s
-
-type Query {
-	// Get a user by ID
-	currentUser: User
-}`, expectedUserSchema),
+				Returns("User", ptr.Of("The user")),
 		},
 		{
 			name: "TestBuilder_Struct_Add_Mutation",
 			actual: builder.NewGraphQLSchemaBuilder(nil).
 				AddType(User{}).
 				AddMutation("createUser", "User", ptr.Of("Create a new user")).
-				Returns("User", ptr.Of("The user")).
-				Build(),
-			expected: fmt.Sprintf(`%s
-
-type Mutation {
-	// Create a new user
-	createUser($input: UserInput!): User
-}`, expectedUserSchema),
+				Returns("User", ptr.Of("The user")),
 		},
 		{
 			name: "TestBuilder_Struct_Add_Options",
@@ -91,21 +120,14 @@ type Mutation {
 					return nil
 				}),
 			}).
-				AddType(User{}).
-				Build(),
-			expected: fmt.Sprintf(`%s
-
-type Mutation {
-	// Create a new user
-	createUser($input: UserInput!): User
-}`, expectedUserSchema),
+				AddType(User{}),
 		},
 	}
 
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.actual, tt.expected)
+			assert.Equal(t, tt.expected, tt.actual)
 		})
 	}
 }

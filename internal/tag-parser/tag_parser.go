@@ -7,7 +7,7 @@ import (
 // Tag represents a GraphQL tag.
 type Tag struct {
 	Name    string
-	Options map[string]string
+	Options *map[string]string
 }
 
 // Get all the tags from a struct and deduce which are GraphQL related.
@@ -127,6 +127,6 @@ func ParseTag(tag string, fieldName string) (*Tag, error) {
 
 	return &Tag{
 		Name:    tagOptions["name"],
-		Options: tagOptions,
+		Options: &tagOptions,
 	}, nil
 }

@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"reflect"
 
-	fieldparser "github.com/warpspeedboilerplate/graphql-schema-generator/cmd/v1/graphql-generator/internal/field_parser"
+	fieldparser "github.com/warpspeedboilerplate/graphql-schema-generator/internal/field_parser"
 )
 
 type Struct struct {
 	Name   string
-	Fields *map[string]*fieldparser.Field
+	Fields *[]*fieldparser.Field
 }
 
 // Parse a struct by reflection into a Struct.

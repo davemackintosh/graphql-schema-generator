@@ -5,9 +5,9 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	fieldparser "github.com/warpspeedboilerplate/graphql-schema-generator/cmd/v1/graphql-generator/internal/field_parser"
-	structparser "github.com/warpspeedboilerplate/graphql-schema-generator/cmd/v1/graphql-generator/internal/struct_parser"
-	tagparser "github.com/warpspeedboilerplate/graphql-schema-generator/cmd/v1/graphql-generator/internal/tag-parser"
+	fieldparser "github.com/warpspeedboilerplate/graphql-schema-generator/internal/field_parser"
+	structparser "github.com/warpspeedboilerplate/graphql-schema-generator/internal/struct_parser"
+	tagparser "github.com/warpspeedboilerplate/graphql-schema-generator/internal/tag-parser"
 )
 
 type TestStruct struct {
@@ -27,13 +27,13 @@ func TestParseStruct(t *testing.T) {
 			s:    TestStruct{},
 			want: &structparser.Struct{
 				Name: "TestStruct",
-				Fields: &map[string]*fieldparser.Field{
-					"TaggedField": {
+				Fields: &[]*fieldparser.Field{
+					{
 						Name: "TaggedField",
 						Type: "string",
 						ParsedTag: &tagparser.Tag{
 							Name: "taggedField",
-							Options: map[string]string{
+							Options: &map[string]string{
 								"omitempty":   "true",
 								"description": "This is a tagged field",
 								"decorators":  "[+doc(description: \"This field is tagged.\"),+requireAuthRole(role: \"admin\"))]",
@@ -41,7 +41,7 @@ func TestParseStruct(t *testing.T) {
 							},
 						},
 					},
-					"UnTaggedField": {
+					{
 						Name:      "UnTaggedField",
 						Type:      "string",
 						ParsedTag: nil,

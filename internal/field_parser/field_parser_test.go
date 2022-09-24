@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	fieldparser "github.com/warpspeedboilerplate/graphql-schema-generator/cmd/v1/graphql-generator/internal/field_parser"
-	tagparser "github.com/warpspeedboilerplate/graphql-schema-generator/cmd/v1/graphql-generator/internal/tag-parser"
+	fieldparser "github.com/warpspeedboilerplate/graphql-schema-generator/internal/field_parser"
+	tagparser "github.com/warpspeedboilerplate/graphql-schema-generator/internal/tag-parser"
 )
 
 type TestStruct struct {
@@ -18,13 +18,13 @@ func TestGetFieldsFromStruct(t *testing.T) {
 	tests := []struct {
 		name    string
 		s       interface{}
-		want    map[string]fieldparser.FieldParserType
+		want    *map[string]*fieldparser.Field
 		wantErr bool
 	}{
 		{
 			name: "TestGetFieldsFromStruct",
 			s:    TestStruct{},
-			want: map[string]fieldparser.FieldParserType{
+			want: &map[string]*fieldparser.Field{
 				"TaggedField": {
 					Name:      "TaggedField",
 					Type:      "string",
@@ -32,7 +32,7 @@ func TestGetFieldsFromStruct(t *testing.T) {
 					IsPointer: false,
 					ParsedTag: &tagparser.Tag{
 						Name: "taggedField",
-						Options: map[string]string{
+						Options: &map[string]string{
 							"omitempty":   "true",
 							"description": "This is a tagged field",
 							"decorators":  "[+doc(description: \"This field is tagged.\"),+requireAuthRole(role: \"admin\"))]",

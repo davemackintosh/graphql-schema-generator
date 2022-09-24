@@ -1,5 +1,7 @@
 package builder
 
+import structparser "github.com/warpspeedboilerplate/graphql-schema-generator/internal/struct_parser"
+
 type GraphQLSchemaBuilderType struct{}
 
 type GraphQLSchemaBuilderOptions struct {
@@ -8,6 +10,7 @@ type GraphQLSchemaBuilderOptions struct {
 }
 
 type GraphQLSchemaBuilder struct {
+	Types   *[]structparser.Struct
 	Options *GraphQLSchemaBuilderOptions
 }
 
