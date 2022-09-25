@@ -1,6 +1,10 @@
 package builder
 
-import structparser "github.com/warpspeedboilerplate/graphql-schema-generator/internal/struct_parser"
+import (
+	"reflect"
+
+	structparser "github.com/warpspeedboilerplate/graphql-schema-generator/internal/struct_parser"
+)
 
 type GraphQLSchemaBuilderType struct{}
 
@@ -10,7 +14,7 @@ type GraphQLSchemaBuilderOptions struct {
 }
 
 type GraphQLSchemaBuilder struct {
-	Types   *[]structparser.Struct
+	Types   *[]*structparser.Struct
 	Options *GraphQLSchemaBuilderOptions
 }
 
@@ -29,6 +33,12 @@ func (b *GraphQLSchemaBuilder) AddQuery(name, typeName string, description *stri
 }
 
 func (b *GraphQLSchemaBuilder) AddType(t interface{}) *GraphQLSchemaBuilder {
+	parsed, err := structparser.ParseStruct(reflect.TypeOf(t))
+	if err != nil {
+		panic(err)
+	}
+
+	*b.Types = append(*b.Types, parsed)
 	return b
 }
 

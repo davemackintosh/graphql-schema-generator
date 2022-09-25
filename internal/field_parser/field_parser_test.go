@@ -18,14 +18,14 @@ func TestGetFieldsFromStruct(t *testing.T) {
 	tests := []struct {
 		name    string
 		s       interface{}
-		want    *map[string]*fieldparser.Field
+		want    *[]*fieldparser.Field
 		wantErr bool
 	}{
 		{
 			name: "TestGetFieldsFromStruct",
 			s:    TestStruct{},
-			want: &map[string]*fieldparser.Field{
-				"TaggedField": {
+			want: &[]*fieldparser.Field{
+				{
 					Name:      "TaggedField",
 					Type:      "string",
 					IsArray:   false,
@@ -40,7 +40,7 @@ func TestGetFieldsFromStruct(t *testing.T) {
 						},
 					},
 				},
-				"UnTaggedField": {
+				{
 					Name:      "UnTaggedField",
 					Type:      "string",
 					IsArray:   false,

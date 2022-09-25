@@ -1,13 +1,11 @@
 package builder_test
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/warpspeedboilerplate/graphql-schema-generator/internal/builder"
 	fieldparser "github.com/warpspeedboilerplate/graphql-schema-generator/internal/field_parser"
-	"github.com/warpspeedboilerplate/graphql-schema-generator/internal/ptr"
 	structparser "github.com/warpspeedboilerplate/graphql-schema-generator/internal/struct_parser"
 	tagparser "github.com/warpspeedboilerplate/graphql-schema-generator/internal/tag-parser"
 )
@@ -39,7 +37,8 @@ func TestBuilder(t *testing.T) {
 			actual: builder.NewGraphQLSchemaBuilder(nil).
 				AddType(User{}),
 			expected: &builder.GraphQLSchemaBuilder{
-				Types: &[]structparser.Struct{
+				Options: nil,
+				Types: &[]*structparser.Struct{
 					{
 						Name: "User",
 						Fields: &[]*fieldparser.Field{
@@ -98,29 +97,6 @@ func TestBuilder(t *testing.T) {
 					},
 				},
 			},
-		},
-		{
-			name: "TestBuilder_Struct_Add_Query",
-			actual: builder.NewGraphQLSchemaBuilder(nil).
-				AddType(User{}).
-				AddQuery("currentUser", "User", ptr.Of("Get a user by ID")).
-				Returns("User", ptr.Of("The user")),
-		},
-		{
-			name: "TestBuilder_Struct_Add_Mutation",
-			actual: builder.NewGraphQLSchemaBuilder(nil).
-				AddType(User{}).
-				AddMutation("createUser", "User", ptr.Of("Create a new user")).
-				Returns("User", ptr.Of("The user")),
-		},
-		{
-			name: "TestBuilder_Struct_Add_Options",
-			actual: builder.NewGraphQLSchemaBuilder(&builder.GraphQLSchemaBuilderOptions{
-				Writer: ptr.Of(func(typeName, s string) error {
-					return nil
-				}),
-			}).
-				AddType(User{}),
 		},
 	}
 
