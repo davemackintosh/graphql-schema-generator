@@ -11,8 +11,8 @@ import (
 )
 
 type TestStruct struct {
-	TaggedField   string `graphql:"taggedField, omitempty, description=This is a tagged field, decorators=[+doc(description: \"This field is tagged.\"), +requireAuthRole(role: \"admin\"))]"`
-	UnTaggedField string
+	TaggedField   string `json:"taggedField" graphql:"description=This is a tagged field, decorators=[+doc(description: \"This field is tagged.\"), +requireAuthRole(role: \"admin\"))]"`
+	UnTaggedField string `json:"unTaggedField"`
 }
 
 func TestParseStruct(t *testing.T) {
@@ -29,22 +29,21 @@ func TestParseStruct(t *testing.T) {
 				Name: "TestStruct",
 				Fields: &[]*fieldparser.Field{
 					{
-						Name: "TaggedField",
-						Type: "string",
+						Name:            "taggedField",
+						Type:            "string",
+						IncludeInOutput: true,
 						ParsedTag: &tagparser.Tag{
-							Name: "taggedField",
-							Options: &map[string]string{
-								"omitempty":   "true",
+							Options: map[string]string{
 								"description": "This is a tagged field",
 								"decorators":  "[+doc(description: \"This field is tagged.\"),+requireAuthRole(role: \"admin\"))]",
-								"name":        "taggedField",
 							},
 						},
 					},
 					{
-						Name:      "UnTaggedField",
-						Type:      "string",
-						ParsedTag: nil,
+						Name:            "unTaggedField",
+						Type:            "string",
+						IncludeInOutput: true,
+						ParsedTag:       nil,
 					},
 				},
 			},
@@ -55,12 +54,7 @@ func TestParseStruct(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := structparser.ParseStruct(reflect.TypeOf(tt.s))
-			if (err != nil) != tt.wantErr {
-				t.Errorf("ParseStruct() error = %v, wantErr %v", err, tt.wantErr)
-
-				return
-			}
+			got := structparser.ParseStruct(reflect.TypeOf(tt.s))
 			assert.Equal(t, tt.want, got)
 		})
 	}

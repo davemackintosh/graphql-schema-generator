@@ -10,8 +10,9 @@ import (
 )
 
 type TestStruct struct {
-	TaggedField   string `graphql:"taggedField, omitempty, description=This is a tagged field, decorators=[+doc(description: \"This field is tagged.\"), +requireAuthRole(role: \"admin\"))]"`
-	UnTaggedField string
+	TaggedField   string `json:"taggedField" graphql:"description=This is a tagged field, decorators=[+doc(description: \"This field is tagged.\"), +requireAuthRole(role: \"admin\"))]"`
+	UnTaggedField string `json:"unTaggedField"`
+	NormField     string
 }
 
 func TestGetFieldsFromStruct(t *testing.T) {
@@ -26,26 +27,33 @@ func TestGetFieldsFromStruct(t *testing.T) {
 			s:    TestStruct{},
 			want: &[]*fieldparser.Field{
 				{
-					Name:      "TaggedField",
-					Type:      "string",
-					IsArray:   false,
-					IsPointer: false,
+					Name:            "taggedField",
+					Type:            "string",
+					IsArray:         false,
+					IsPointer:       false,
+					IncludeInOutput: true,
 					ParsedTag: &tagparser.Tag{
-						Name: "taggedField",
-						Options: &map[string]string{
-							"omitempty":   "true",
+						Options: map[string]string{
 							"description": "This is a tagged field",
 							"decorators":  "[+doc(description: \"This field is tagged.\"),+requireAuthRole(role: \"admin\"))]",
-							"name":        "taggedField",
 						},
 					},
 				},
 				{
-					Name:      "UnTaggedField",
-					Type:      "string",
-					IsArray:   false,
-					IsPointer: false,
-					ParsedTag: nil,
+					Name:            "unTaggedField",
+					Type:            "string",
+					IsArray:         false,
+					IsPointer:       false,
+					IncludeInOutput: true,
+					ParsedTag:       nil,
+				},
+				{
+					Name:            "NormField",
+					Type:            "string",
+					IsArray:         false,
+					IsPointer:       false,
+					IncludeInOutput: true,
+					ParsedTag:       nil,
 				},
 			},
 			wantErr: false,
@@ -55,12 +63,7 @@ func TestGetFieldsFromStruct(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := fieldparser.GetFieldsFromStruct(reflect.TypeOf(tt.s))
-			if (err != nil) != tt.wantErr {
-				t.Errorf("GetFieldsFromStruct() error = %v, wantErr %v", err, tt.wantErr)
-
-				return
-			}
+			got := fieldparser.GetFieldsFromStruct(reflect.TypeOf(tt.s))
 			assert.Equal(t, tt.want, got)
 		})
 	}

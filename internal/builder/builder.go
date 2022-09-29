@@ -33,9 +33,10 @@ func (b *GraphQLSchemaBuilder) AddQuery(name, typeName string, description *stri
 }
 
 func (b *GraphQLSchemaBuilder) AddType(t interface{}) *GraphQLSchemaBuilder {
-	parsed, err := structparser.ParseStruct(reflect.TypeOf(t))
-	if err != nil {
-		panic(err)
+	parsed := structparser.ParseStruct(reflect.TypeOf(t))
+
+	if b.Types == nil {
+		b.Types = &[]*structparser.Struct{}
 	}
 
 	*b.Types = append(*b.Types, parsed)

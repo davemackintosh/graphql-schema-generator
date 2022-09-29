@@ -9,45 +9,24 @@ import (
 )
 
 type TestStruct struct {
-	TaggedField   string `graphql:"taggedField, omitempty, description=This is a tagged field, decorators=[+doc(description: \"This field is tagged.\"), +requireAuthRole(role: \"admin\"))]"`
-	UnTaggedField string
+	TaggedField   string `json:"taggedField" graphql:"description=This is a tagged field, decorators=[+doc(description: \"This field is tagged.\"), +requireAuthRole(role: \"admin\"))]"`
+	UnTaggedField string `json:"unTaggedField"`
 }
 
 func TestGetTagsFromStruct(t *testing.T) {
-	tests := []struct {
-		name    string
-		s       interface{}
-		want    map[string]tagparser.Tag
-		wantErr bool
-	}{
-		{
-			name: "TestGetTagsFromStruct",
-			s:    TestStruct{},
-			want: map[string]tagparser.Tag{
-				"taggedField": {
-					Name: "taggedField",
-					Options: &map[string]string{
-						"omitempty":   "true",
-						"description": "This is a tagged field",
-						"decorators":  "[+doc(description: \"This field is tagged.\"),+requireAuthRole(role: \"admin\"))]",
-						"name":        "taggedField",
-					},
-				},
+	t.Run("Test tag parser.", func(t *testing.T) {
+		target := &TestStruct{}
+		fields := reflect.TypeOf(target).Elem()
+
+		field, exists := fields.FieldByName("TaggedField")
+		assert.Equal(t, true, exists)
+		got := tagparser.GetTagFromField(field)
+
+		assert.Equal(t, tagparser.Tag{
+			Options: map[string]string{
+				"description": "This is a tagged field",
+				"decorators":  "[+doc(description: \"This field is tagged.\"),+requireAuthRole(role: \"admin\"))]",
 			},
-			wantErr: false,
-		},
-	}
-
-	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := tagparser.GetTagsFromStruct(reflect.TypeOf(tt.s))
-			if (err != nil) != tt.wantErr {
-				t.Errorf("GetTagsFromStruct() error = %v, wantErr %v", err, tt.wantErr)
-
-				return
-			}
-			assert.Equal(t, tt.want, got)
-		})
-	}
+		}, *got)
+	})
 }

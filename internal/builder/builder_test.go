@@ -18,77 +18,87 @@ const (
 )
 
 type User struct {
-	ID       string  `graphql:"id, description=The ID of the user"`
-	Username string  `graphql:"username, description=The username of the user,decorators=[+unique()]"`
-	Password string  // This field should not appear in the graphql schema.
-	Email    *string `graphql:"email, description=The email of the user"`
-	Phone    *string `graphql:"phone, description=The phone number of the user"`
-	Roles    Roles   `graphql:"roles, description=The roles of the user"`
+	ID       string  `json:"id" graphql:"description=The ID of the user"`
+	Username string  `json:"username" graphql:"description=The username of the user,decorators=[+unique()]"`
+	Password string  `json:"-"` // This field should not appear in the graphql schema.
+	Email    *string `json:"email" graphql:"description=The email of the user"`
+	Phone    *string `json:"phone" graphql:"description=The phone number of the user"`
+	Roles    []Roles `json:"roles" graphql:"description=The roles of the user"`
 }
 
 func TestBuilder(t *testing.T) {
 	tests := []struct {
 		name     string
-		expected *builder.GraphQLSchemaBuilder
-		actual   *builder.GraphQLSchemaBuilder
+		expected builder.GraphQLSchemaBuilder
+		actual   builder.GraphQLSchemaBuilder
 	}{
 		{
 			name: "TestBuilder_Struct",
-			actual: builder.NewGraphQLSchemaBuilder(nil).
+			actual: *builder.NewGraphQLSchemaBuilder(nil).
 				AddType(User{}),
-			expected: &builder.GraphQLSchemaBuilder{
+			expected: builder.GraphQLSchemaBuilder{
 				Options: nil,
 				Types: &[]*structparser.Struct{
 					{
 						Name: "User",
 						Fields: &[]*fieldparser.Field{
 							{
-								Name: "id",
-								Type: "String",
+								Name:            "id",
+								Type:            "string",
+								IncludeInOutput: true,
 								ParsedTag: &tagparser.Tag{
-									Name: "id",
-									Options: &map[string]string{
+									Options: map[string]string{
 										"description": "The ID of the user",
 									},
 								},
 							},
 							{
-								Name: "username",
-								Type: "String",
+								Name:            "username",
+								Type:            "string",
+								IncludeInOutput: true,
 								ParsedTag: &tagparser.Tag{
-									Name: "username",
-									Options: &map[string]string{
+									Options: map[string]string{
 										"description": "The username of the user",
 										"decorators":  "[+unique()]",
 									},
 								},
 							},
 							{
-								Name: "email",
-								Type: "String",
+								Name:            "Password",
+								Type:            "string",
+								IncludeInOutput: false,
+								ParsedTag:       nil,
+							},
+							{
+								Name:            "email",
+								Type:            "string",
+								IsPointer:       true,
+								IncludeInOutput: true,
 								ParsedTag: &tagparser.Tag{
-									Name: "email",
-									Options: &map[string]string{
+									Options: map[string]string{
 										"description": "The email of the user",
 									},
 								},
 							},
 							{
-								Name: "phone",
-								Type: "String",
+								Name:            "phone",
+								Type:            "string",
+								IsPointer:       true,
+								IncludeInOutput: true,
 								ParsedTag: &tagparser.Tag{
-									Name: "phone",
-									Options: &map[string]string{
+									Options: map[string]string{
 										"description": "The phone number of the user",
 									},
 								},
 							},
 							{
-								Name: "roles",
-								Type: "Roles",
+								Name:            "roles",
+								Type:            "Roles",
+								IsPointer:       false,
+								IsArray:         true,
+								IncludeInOutput: true,
 								ParsedTag: &tagparser.Tag{
-									Name: "roles",
-									Options: &map[string]string{
+									Options: map[string]string{
 										"description": "The roles of the user",
 									},
 								},
