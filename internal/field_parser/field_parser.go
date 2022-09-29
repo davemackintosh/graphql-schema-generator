@@ -16,7 +16,7 @@ type Field struct {
 	ParsedTag       *tagparser.Tag
 }
 
-// Parse a struct field into its name and type with parsed tags as a Field.
+// ParseField parses a struct field into its name and type with parsed tags as a Field.
 func ParseField(field reflect.StructField) *Field {
 	var fieldName string
 
@@ -30,13 +30,27 @@ func ParseField(field reflect.StructField) *Field {
 		fieldName = field.Name
 	}
 
+	fieldType := field.Type.String()
+
+	// If the fieldName has a period in it, it's a nested struct.
+	// We need to remove the struct name from the field name.
+	if strings.Contains(fieldType, ".") {
+		fieldTypeParts := strings.Split(fieldType, ".")
+
+		if len(fieldTypeParts) > 1 {
+			fieldType = fieldTypeParts[len(fieldTypeParts)-1]
+		} else {
+			fieldType = fieldTypeParts[0]
+		}
+	}
+
 	fieldParserType := &Field{
 		Name:            fieldName,
-		Type:            field.Type.Name(),
+		Type:            strings.TrimPrefix(fieldType, "*"),
 		IsArray:         field.Type.Kind() == reflect.Slice,
 		IsPointer:       field.Type.Kind() == reflect.Ptr,
 		ParsedTag:       tagparser.GetTagFromField(field),
-		IncludeInOutput: fieldName != "-",
+		IncludeInOutput: jsonTagName != "-",
 	}
 
 	return fieldParserType
