@@ -5,8 +5,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/warpspeedboilerplate/graphql-schema-generator/internal/builder"
-	fieldparser "github.com/warpspeedboilerplate/graphql-schema-generator/internal/field_parser"
-	structparser "github.com/warpspeedboilerplate/graphql-schema-generator/internal/struct_parser"
 	tagparser "github.com/warpspeedboilerplate/graphql-schema-generator/internal/tag-parser"
 )
 
@@ -26,85 +24,146 @@ type User struct {
 	Roles    []Roles `json:"roles" graphql:"description=The roles of the user"`
 }
 
+type UserDocument struct {
+	ID      string `json:"id" graphql:"description=The ID of the document"`
+	Name    string `json:"name" graphql:"description=The name of the document"`
+	Editors []User `json:"editors" graphql:"description=The editors of the document"`
+}
+
 func TestBuilder(t *testing.T) {
+	expectedUser := builder.Struct{
+		Name: "User",
+		Fields: &[]*builder.Field{
+			{
+				Name:            "id",
+				Type:            "string",
+				IncludeInOutput: true,
+				ParsedTag: &tagparser.Tag{
+					Options: map[string]string{
+						"description": "The ID of the user",
+					},
+				},
+			},
+			{
+				Name:            "username",
+				Type:            "string",
+				IncludeInOutput: true,
+				ParsedTag: &tagparser.Tag{
+					Options: map[string]string{
+						"description": "The username of the user",
+						"decorators":  "[+unique()]",
+					},
+				},
+			},
+			{
+				Name:            "Password",
+				Type:            "string",
+				IncludeInOutput: false,
+				ParsedTag:       nil,
+			},
+			{
+				Name:            "email",
+				Type:            "string",
+				IsPointer:       true,
+				IncludeInOutput: true,
+				ParsedTag: &tagparser.Tag{
+					Options: map[string]string{
+						"description": "The email of the user",
+					},
+				},
+			},
+			{
+				Name:            "phone",
+				Type:            "string",
+				IsPointer:       true,
+				IncludeInOutput: true,
+				ParsedTag: &tagparser.Tag{
+					Options: map[string]string{
+						"description": "The phone number of the user",
+					},
+				},
+			},
+			{
+				Name:            "roles",
+				Type:            "Roles",
+				IsPointer:       false,
+				IsSlice:         true,
+				IncludeInOutput: true,
+				ParsedTag: &tagparser.Tag{
+					Options: map[string]string{
+						"description": "The roles of the user",
+					},
+				},
+			},
+		},
+	}
+
 	tests := []struct {
 		name     string
 		expected builder.GraphQLSchemaBuilder
 		actual   builder.GraphQLSchemaBuilder
 	}{
-		{
-			name: "TestBuilder_Struct",
-			actual: *builder.NewGraphQLSchemaBuilder(nil).
-				AddType(User{}),
+		/*{
+			name: "TestBuilder_NestedFieldStructs",
+			actual: *builder.NewGraphQLSchemaBuilder(nil).AddStruct(UserDocument{
+				ID:   "123",
+				Name: "Test",
+				Editors: []User{
+					{},
+				},
+			}),
 			expected: builder.GraphQLSchemaBuilder{
 				Options: nil,
-				Types: &[]*structparser.Struct{
+				Structs: []*builder.Struct{
 					{
-						Name: "User",
-						Fields: &[]*fieldparser.Field{
+						Name: "UserDocument",
+						Fields: &[]*builder.Field{
 							{
 								Name:            "id",
 								Type:            "string",
 								IncludeInOutput: true,
 								ParsedTag: &tagparser.Tag{
 									Options: map[string]string{
-										"description": "The ID of the user",
+										"description": "The ID of the document",
 									},
 								},
 							},
 							{
-								Name:            "username",
+								Name:            "name",
 								Type:            "string",
 								IncludeInOutput: true,
 								ParsedTag: &tagparser.Tag{
 									Options: map[string]string{
-										"description": "The username of the user",
-										"decorators":  "[+unique()]",
+										"description": "The name of the document",
 									},
 								},
 							},
 							{
-								Name:            "Password",
-								Type:            "string",
-								IncludeInOutput: false,
-								ParsedTag:       nil,
-							},
-							{
-								Name:            "email",
-								Type:            "string",
-								IsPointer:       true,
-								IncludeInOutput: true,
-								ParsedTag: &tagparser.Tag{
-									Options: map[string]string{
-										"description": "The email of the user",
-									},
-								},
-							},
-							{
-								Name:            "phone",
-								Type:            "string",
-								IsPointer:       true,
-								IncludeInOutput: true,
-								ParsedTag: &tagparser.Tag{
-									Options: map[string]string{
-										"description": "The phone number of the user",
-									},
-								},
-							},
-							{
-								Name:            "roles",
-								Type:            "Roles",
+								Name:            "editors",
+								Type:            "User",
 								IsPointer:       false,
-								IsArray:         true,
+								IsSlice:         true,
 								IncludeInOutput: true,
 								ParsedTag: &tagparser.Tag{
 									Options: map[string]string{
-										"description": "The roles of the user",
+										"description": "The editors of the document",
 									},
 								},
 							},
 						},
 					},
+					&expectedUser,
+				},
+			},
+		},*/
+		{
+			name: "TestBuilder_Struct",
+			actual: *builder.NewGraphQLSchemaBuilder(nil).
+				AddStruct(User{}),
+			expected: builder.GraphQLSchemaBuilder{
+				Options: nil,
+				Structs: []*builder.Struct{
+					&expectedUser,
 				},
 			},
 		},

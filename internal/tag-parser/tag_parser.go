@@ -89,7 +89,13 @@ func ParseTag(tag string, fieldName string) *Tag { //nolint: cyclop
 		prevChar = char
 	}
 
-	tagOptions[currentKey] = currentValue
+	if currentKey != "" && currentValue != "" {
+		tagOptions[currentKey] = currentValue
+	}
+
+	if len(tagOptions) == 0 {
+		return nil
+	}
 
 	return &Tag{
 		Options: tagOptions,

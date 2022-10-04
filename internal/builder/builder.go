@@ -2,19 +2,43 @@ package builder
 
 import (
 	"reflect"
+	"strings"
 
-	structparser "github.com/warpspeedboilerplate/graphql-schema-generator/internal/struct_parser"
+	tagparser "github.com/warpspeedboilerplate/graphql-schema-generator/internal/tag-parser"
 )
 
-type GraphQLSchemaBuilderType struct{}
+type Field struct {
+	Name            string
+	Type            string
+	IsSlice         bool
+	IsPointer       bool
+	IsStruct        bool
+	IncludeInOutput bool
+	ParsedTag       *tagparser.Tag
+}
+
+type Struct struct {
+	Name   string
+	Fields *[]*Field
+}
+
+type Enum[RHS any] struct {
+	Name   string
+	Values map[string]RHS
+}
+
+type GraphQLScehemaBuilderWriter interface {
+	WriteSchema(schema string)
+}
 
 type GraphQLSchemaBuilderOptions struct {
 	// A callback that takes the type name and the generated schema and writes it to an ioWriter.
-	Writer *func(typeName, s string) error
+	Writer GraphQLScehemaBuilderWriter
 }
 
 type GraphQLSchemaBuilder struct {
-	Types   *[]*structparser.Struct
+	Structs []*Struct
+	Enums   []*Enum[any]
 	Options *GraphQLSchemaBuilderOptions
 }
 
@@ -32,14 +56,70 @@ func (b *GraphQLSchemaBuilder) AddQuery(name, typeName string, description *stri
 	return b
 }
 
-func (b *GraphQLSchemaBuilder) AddType(t interface{}) *GraphQLSchemaBuilder {
-	parsed := structparser.ParseStruct(reflect.TypeOf(t))
+func (b *GraphQLSchemaBuilder) AddEnum(enum Enum[any]) *GraphQLSchemaBuilder {
+	b.Enums = append(b.Enums, &enum)
 
-	if b.Types == nil {
-		b.Types = &[]*structparser.Struct{}
+	return b
+}
+
+func (b *GraphQLSchemaBuilder) AddStruct(t interface{}) *GraphQLSchemaBuilder {
+	structType := reflect.ValueOf(t)
+	structName := structType.Type().Name()
+
+	if structName == "" {
+		panic("AddStruct struct name cannot be empty")
 	}
 
-	*b.Types = append(*b.Types, parsed)
+	// Loop over the struct's fields and add them to the list of fields.
+	var fields []*Field
+
+	for i := 0; i < structType.NumField(); i++ {
+		var fieldTypeName string
+
+		field := structType.Type().Field(i)
+
+		// Get the field's type.
+		fieldType := field.Type
+
+		// If the field is a pointer, get the type it points to.
+		if fieldType.Kind() == reflect.Ptr {
+			fieldType = fieldType.Elem()
+		}
+
+		fieldTypeName = fieldType.String()
+		fieldName := field.Name
+
+		// If the fieldName has a period in it, it's a package name.Type and we only want the type name.
+		if strings.Contains(fieldTypeName, ".") {
+			fieldTypeNameParts := strings.Split(fieldTypeName, ".")
+			fieldTypeName = fieldTypeNameParts[len(fieldTypeNameParts)-1]
+		}
+
+		// Get the field name from the json tag and fallback to the field name.
+		jsonTag := field.Tag.Get("json")
+		jsonTagParts := strings.Split(jsonTag, ",")
+		jsonTagName := jsonTagParts[0]
+
+		if jsonTagName != "" && jsonTagName != "-" {
+			fieldName = jsonTagName
+		}
+
+		fields = append(fields, &Field{
+			Name:            fieldName,
+			Type:            fieldTypeName,
+			IsPointer:       field.Type.Kind() == reflect.Ptr,
+			IsSlice:         field.Type.Kind() == reflect.Slice,
+			IsStruct:        field.Type.Kind() == reflect.Struct,
+			ParsedTag:       tagparser.ParseTag(field.Tag.Get("graphql"), field.Name),
+			IncludeInOutput: field.Tag.Get("graphql") != "-" && field.Tag.Get("json") != "-",
+		})
+	}
+
+	b.Structs = append(b.Structs, &Struct{
+		Name:   structName,
+		Fields: &fields,
+	})
+
 	return b
 }
 
