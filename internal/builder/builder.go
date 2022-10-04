@@ -22,9 +22,15 @@ type Struct struct {
 	Fields *[]*Field
 }
 
-type Enum[RHS any] struct {
+type EnumKeyPairOptions struct {
+	Key         string
+	Value       interface{}
+	Description *string
+}
+
+type Enum struct {
 	Name   string
-	Values map[string]RHS
+	Values []*EnumKeyPairOptions
 }
 
 type GraphQLScehemaBuilderWriter interface {
@@ -38,7 +44,7 @@ type GraphQLSchemaBuilderOptions struct {
 
 type GraphQLSchemaBuilder struct {
 	Structs []*Struct
-	Enums   []*Enum[any]
+	Enums   []*Enum
 	Options *GraphQLSchemaBuilderOptions
 }
 
@@ -56,7 +62,7 @@ func (b *GraphQLSchemaBuilder) AddQuery(name, typeName string, description *stri
 	return b
 }
 
-func (b *GraphQLSchemaBuilder) AddEnum(enum Enum[any]) *GraphQLSchemaBuilder {
+func (b *GraphQLSchemaBuilder) AddEnum(enum Enum) *GraphQLSchemaBuilder {
 	b.Enums = append(b.Enums, &enum)
 
 	return b

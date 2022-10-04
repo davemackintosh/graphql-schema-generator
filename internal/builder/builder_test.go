@@ -167,6 +167,40 @@ func TestBuilder(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "TestBuilder_Enum",
+			actual: *builder.NewGraphQLSchemaBuilder(nil).AddEnum(builder.Enum{
+				Name: "Roles",
+				Values: []*builder.EnumKeyPairOptions{
+					{
+						Key:   "ADMIN",
+						Value: RoleAdmin,
+					},
+					{
+						Key:   "USER",
+						Value: RoleUser,
+					},
+				},
+			}),
+			expected: builder.GraphQLSchemaBuilder{
+				Options: nil,
+				Enums: []*builder.Enum{
+					{
+						Name: "Roles",
+						Values: []*builder.EnumKeyPairOptions{
+							{
+								Key:   "ADMIN",
+								Value: RoleAdmin,
+							},
+							{
+								Key:   "USER",
+								Value: RoleUser,
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for _, tt := range tests {
