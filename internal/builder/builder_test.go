@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
 	"github.com/warpspeedboilerplate/graphql-schema-generator/internal/builder"
 	tagparser "github.com/warpspeedboilerplate/graphql-schema-generator/internal/tag-parser"
 )
@@ -103,7 +104,7 @@ func TestBuilder(t *testing.T) {
 		expected builder.GraphQLSchemaBuilder
 		actual   builder.GraphQLSchemaBuilder
 	}{
-		/*{
+		{
 			name: "TestBuilder_NestedFieldStructs",
 			actual: *builder.NewGraphQLSchemaBuilder(nil).AddStruct(UserDocument{
 				ID:   "123",
@@ -155,7 +156,7 @@ func TestBuilder(t *testing.T) {
 					&expectedUser,
 				},
 			},
-		},*/
+		},
 		{
 			name: "TestBuilder_Struct",
 			actual: *builder.NewGraphQLSchemaBuilder(nil).

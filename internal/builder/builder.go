@@ -33,13 +33,13 @@ type Enum struct {
 	Values []*EnumKeyPairOptions
 }
 
-type GraphQLScehemaBuilderWriter interface {
+type GraphQLSchemaBuilderWriter interface {
 	WriteSchema(schema string)
 }
 
 type GraphQLSchemaBuilderOptions struct {
 	// A callback that takes the type name and the generated schema and writes it to an ioWriter.
-	Writer GraphQLScehemaBuilderWriter
+	Writer GraphQLSchemaBuilderWriter
 }
 
 type GraphQLSchemaBuilder struct {
@@ -80,19 +80,24 @@ func (b *GraphQLSchemaBuilder) AddStruct(t interface{}) *GraphQLSchemaBuilder {
 	var fields []*Field
 
 	for i := 0; i < structType.NumField(); i++ {
-		var fieldTypeName string
-
 		field := structType.Type().Field(i)
-
-		// Get the field's type.
 		fieldType := field.Type
+		fieldTypeName := fieldType.String()
 
 		// If the field is a pointer, get the type it points to.
 		if fieldType.Kind() == reflect.Ptr {
 			fieldType = fieldType.Elem()
+			fieldTypeName = fieldType.String()
 		}
 
-		fieldTypeName = fieldType.String()
+		// If the field is a slice of a struct, we need to get the struct and add it.
+		if structType.Field(i).Kind() == reflect.Slice && structType.Field(i).Type().Elem().Kind() == reflect.Struct {
+			b.AddStruct(reflect.New(structType.Field(i).Type().Elem()).Elem().Interface())
+			// Otherwise, if it's a struct, we need to add it.
+		} else if structType.Field(i).Kind() == reflect.Struct {
+			b.AddStruct(structType.Field(i).Interface())
+		}
+
 		fieldName := field.Name
 
 		// If the fieldName has a period in it, it's a package name.Type and we only want the type name.
