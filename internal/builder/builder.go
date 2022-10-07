@@ -93,8 +93,8 @@ func (b *GraphQLSchemaBuilder) AddStruct(t interface{}) *GraphQLSchemaBuilder {
 		// If the field is a slice of a struct, we need to get the struct and add it.
 		if structType.Field(i).Kind() == reflect.Slice && structType.Field(i).Type().Elem().Kind() == reflect.Struct {
 			b.AddStruct(reflect.New(structType.Field(i).Type().Elem()).Elem().Interface())
-			// Otherwise, if it's a struct, we need to add it.
 		} else if structType.Field(i).Kind() == reflect.Struct {
+			// Otherwise, if it's a struct, we need to add it.
 			b.AddStruct(structType.Field(i).Interface())
 		}
 
