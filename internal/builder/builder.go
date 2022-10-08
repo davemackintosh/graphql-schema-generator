@@ -1,6 +1,7 @@
 package builder
 
 import (
+	"fmt"
 	"reflect"
 	"strings"
 
@@ -68,12 +69,16 @@ func (b *GraphQLSchemaBuilder) AddEnum(enum Enum) *GraphQLSchemaBuilder {
 	return b
 }
 
-func (b *GraphQLSchemaBuilder) AddStruct(t interface{}) *GraphQLSchemaBuilder {
+type AddStructOptions struct {
+	Name *string
+}
+
+func (b *GraphQLSchemaBuilder) AddStruct(t interface{}, options *AddStructOptions) *GraphQLSchemaBuilder { //nolint: cyclop
 	structType := reflect.ValueOf(t)
 	structName := structType.Type().Name()
 
-	if structName == "" {
-		panic("AddStruct struct name cannot be empty")
+	if options != nil && options.Name != nil {
+		structName = *options.Name
 	}
 
 	// Loop over the struct's fields and add them to the list of fields.
@@ -92,10 +97,31 @@ func (b *GraphQLSchemaBuilder) AddStruct(t interface{}) *GraphQLSchemaBuilder {
 
 		// If the field is a slice of a struct, we need to get the struct and add it.
 		if structType.Field(i).Kind() == reflect.Slice && structType.Field(i).Type().Elem().Kind() == reflect.Struct {
-			b.AddStruct(reflect.New(structType.Field(i).Type().Elem()).Elem().Interface())
+			target := reflect.New(structType.Field(i).Type().Elem()).Elem()
+
+			// If this is an embedded struct with no name, we need to get the name of the struct it's embedded in
+			// and use that as the name of the struct concatenated with the name of the field.
+			targetName := target.Type().Name()
+			if targetName == "" {
+				targetName = fmt.Sprintf("%s_%s", structName, field.Name)
+			}
+
+			b.AddStruct(target.Interface(), &AddStructOptions{
+				Name: &targetName,
+			})
 		} else if structType.Field(i).Kind() == reflect.Struct {
-			// Otherwise, if it's a struct, we need to add it.
-			b.AddStruct(structType.Field(i).Interface())
+			target := structType.Field(i)
+
+			// If this is an embedded struct with no name, we need to get the name of the struct it's embedded in
+			// and use that as the name of the struct concatenated with the name of the field.
+			targetName := target.Type().Name()
+			if targetName == "" {
+				targetName = fmt.Sprintf("%s_%s", structName, field.Name)
+			}
+
+			b.AddStruct(target.Interface(), &AddStructOptions{
+				Name: &targetName,
+			})
 		}
 
 		fieldName := field.Name
@@ -113,6 +139,12 @@ func (b *GraphQLSchemaBuilder) AddStruct(t interface{}) *GraphQLSchemaBuilder {
 
 		if jsonTagName != "" && jsonTagName != "-" {
 			fieldName = jsonTagName
+		}
+
+		// One last check. if it was an embedded struct, we need to get the name of the struct it's embedded in
+		// and use that as the name of the struct concatenated with the name of the field.
+		if structType.Type().Name() == "" {
+			fieldTypeName = fmt.Sprintf("%s_%s", structName, fieldName)
 		}
 
 		fields = append(fields, &Field{

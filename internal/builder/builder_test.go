@@ -1,5 +1,24 @@
 package builder_test
 
+// Checklist
+// X test that the builder is actually doing the right thing (i.e. that it's
+//   actually building the right thing) with a variety of different inputs
+// X test nested named structs get added to the schema
+// - test that anonymous structs get added to the schema and that they are
+//   named TheStructTheFieldIsEmbeddedIn_FieldName
+// - test recursive structs get added to the schema and don't cause infinite
+//   recursion/failures
+// - test that the builder can handle a struct with a field that is a pointer
+//   to a struct
+// - test that the builder can handle a struct with a field that is a slice of
+//   structs
+// - test that the builder can handle a struct with a field that is a map of
+//   structs
+// - test that the builder can handle a struct with a field that is a slice of
+//   pointers to structs
+// - test that the builder can handle a struct with a field that is a map of
+//   pointers to structs
+
 import (
 	"testing"
 
@@ -29,6 +48,12 @@ type UserDocument struct {
 	ID      string `json:"id" graphql:"description=The ID of the document"`
 	Name    string `json:"name" graphql:"description=The name of the document"`
 	Editors []User `json:"editors" graphql:"description=The editors of the document"`
+	// DocumentRules *map[string]string `json:"documentRules" graphql:"description=The rules for the document"`
+	// RoleRules     *map[Roles]string  `json:"roleRules" graphql:"description=The rules for the document"`
+	Meta struct {
+		Author       string `json:"author" graphql:"description=The author of the document"`
+		LastModified string `json:"lastModified" graphql:"description=The last time the document was modified"`
+	} `json:"meta" graphql:"description=The meta data of the document"`
 }
 
 func TestBuilder(t *testing.T) {
@@ -112,11 +137,43 @@ func TestBuilder(t *testing.T) {
 				Editors: []User{
 					{},
 				},
-			}),
+				Meta: struct {
+					Author       string `json:"author" graphql:"description=The author of the document"`
+					LastModified string `json:"lastModified" graphql:"description=The last time the document was modified"`
+				}{
+					Author:       "Test",
+					LastModified: "Test",
+				},
+			}, nil),
 			expected: builder.GraphQLSchemaBuilder{
 				Options: nil,
 				Structs: []*builder.Struct{
 					&expectedUser,
+					{
+						Name: "UserDocument_Meta",
+						Fields: &[]*builder.Field{
+							{
+								Name:            "author",
+								Type:            "string",
+								IncludeInOutput: true,
+								ParsedTag: &tagparser.Tag{
+									Options: map[string]string{
+										"description": "The author of the document",
+									},
+								},
+							},
+							{
+								Name:            "lastModified",
+								Type:            "string",
+								IncludeInOutput: true,
+								ParsedTag: &tagparser.Tag{
+									Options: map[string]string{
+										"description": "The last time the document was modified",
+									},
+								},
+							},
+						},
+					},
 					{
 						Name: "UserDocument",
 						Fields: &[]*builder.Field{
@@ -152,6 +209,18 @@ func TestBuilder(t *testing.T) {
 									},
 								},
 							},
+							{
+								Name:            "meta",
+								Type:            "UserDocument_Meta",
+								IsPointer:       false,
+								IncludeInOutput: true,
+								IsStruct:        true,
+								ParsedTag: &tagparser.Tag{
+									Options: map[string]string{
+										"description": "The meta data of the document",
+									},
+								},
+							},
 						},
 					},
 				},
@@ -160,7 +229,7 @@ func TestBuilder(t *testing.T) {
 		{
 			name: "TestBuilder_Struct",
 			actual: *builder.NewGraphQLSchemaBuilder(nil).
-				AddStruct(User{}),
+				AddStruct(User{}, nil),
 			expected: builder.GraphQLSchemaBuilder{
 				Options: nil,
 				Structs: []*builder.Struct{
