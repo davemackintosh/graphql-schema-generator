@@ -116,6 +116,7 @@ func TestBuilder(t *testing.T) {
 			expected: builder.GraphQLSchemaBuilder{
 				Options: nil,
 				Structs: []*builder.Struct{
+					&expectedUser,
 					{
 						Name: "UserDocument",
 						Fields: &[]*builder.Field{
@@ -153,7 +154,6 @@ func TestBuilder(t *testing.T) {
 							},
 						},
 					},
-					&expectedUser,
 				},
 			},
 		},
