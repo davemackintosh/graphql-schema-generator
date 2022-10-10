@@ -36,12 +36,13 @@ const (
 )
 
 type User struct {
-	ID       string  `json:"id" graphql:"description=The ID of the user"`
-	Username string  `json:"username" graphql:"description=The username of the user,decorators=[+unique()]"`
-	Password string  `json:"-"` // This field should not appear in the graphql schema.
-	Email    *string `json:"email" graphql:"description=The email of the user"`
-	Phone    *string `json:"phone" graphql:"description=The phone number of the user"`
-	Roles    []Roles `json:"roles" graphql:"description=The roles of the user"`
+	ID        string         `json:"id" graphql:"description=The ID of the user"`
+	Username  string         `json:"username" graphql:"description=The username of the user,decorators=[+unique()]"`
+	Password  string         `json:"-"` // This field should not appear in the graphql schema.
+	Email     *string        `json:"email" graphql:"description=The email of the user"`
+	Phone     *string        `json:"phone" graphql:"description=The phone number of the user"`
+	Roles     []Roles        `json:"roles" graphql:"description=The roles of the user"`
+	Documents []UserDocument `json:"documents" graphql:"description=The documents of the user"`
 }
 
 type UserDocument struct {

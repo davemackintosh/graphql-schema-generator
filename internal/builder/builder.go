@@ -47,6 +47,11 @@ type GraphQLSchemaBuilder struct {
 	Structs []*Struct
 	Enums   []*Enum
 	Options *GraphQLSchemaBuilderOptions
+
+	// Keep a list of types that are pending being added to the schema.
+	// This is used to prevent infinite recursion when a struct has a field that is a pointer to itself
+	// or a slice of itself or when structs have circular references.
+	pendingTypeNames []string
 }
 
 func NewGraphQLSchemaBuilder(options *GraphQLSchemaBuilderOptions) *GraphQLSchemaBuilder {
@@ -73,6 +78,23 @@ type AddStructOptions struct {
 	Name *string
 }
 
+// A function that returns a boolean whether a struct exists by this name or is pending.
+func (b *GraphQLSchemaBuilder) structExistsAndIsntPending(name string) bool {
+	for _, pendingName := range b.pendingTypeNames {
+		if pendingName == name {
+			return true
+		}
+	}
+
+	for _, s := range b.Structs {
+		if s.Name == name {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (b *GraphQLSchemaBuilder) AddStruct(t interface{}, options *AddStructOptions) *GraphQLSchemaBuilder { //nolint: cyclop
 	structType := reflect.ValueOf(t)
 	structName := structType.Type().Name()
@@ -80,6 +102,14 @@ func (b *GraphQLSchemaBuilder) AddStruct(t interface{}, options *AddStructOption
 	if options != nil && options.Name != nil {
 		structName = *options.Name
 	}
+
+	// If there is already a struct with this name, return.
+	if b.structExistsAndIsntPending(structName) {
+		return b
+	}
+
+	// Push the struct name to the pending list.
+	b.pendingTypeNames = append(b.pendingTypeNames, structName)
 
 	// Loop over the struct's fields and add them to the list of fields.
 	var fields []*Field
@@ -108,9 +138,12 @@ func (b *GraphQLSchemaBuilder) AddStruct(t interface{}, options *AddStructOption
 				fieldTypeName = embeddedName
 			}
 
-			b.AddStruct(target.Interface(), &AddStructOptions{
-				Name: &targetName,
-			})
+			// If the struct doesn't already exist, add it.
+			if !b.structExistsAndIsntPending(targetName) {
+				b.AddStruct(target.Interface(), &AddStructOptions{
+					Name: &targetName,
+				})
+			}
 		} else if structType.Field(i).Kind() == reflect.Struct {
 			target := structType.Field(i)
 			embeddedName := fmt.Sprintf("%s_%s", structName, field.Name)
@@ -123,9 +156,12 @@ func (b *GraphQLSchemaBuilder) AddStruct(t interface{}, options *AddStructOption
 				fieldTypeName = embeddedName
 			}
 
-			b.AddStruct(target.Interface(), &AddStructOptions{
-				Name: &targetName,
-			})
+			// If the struct doesn't already exist, add it.
+			if !b.structExistsAndIsntPending(targetName) {
+				b.AddStruct(target.Interface(), &AddStructOptions{
+					Name: &targetName,
+				})
+			}
 		}
 
 		fieldName := field.Name
@@ -161,6 +197,12 @@ func (b *GraphQLSchemaBuilder) AddStruct(t interface{}, options *AddStructOption
 		Fields: &fields,
 	})
 
+	// Remove the struct name from the pending list.
+	for i, pendingName := range b.pendingTypeNames {
+		if pendingName == structName {
+			b.pendingTypeNames = append(b.pendingTypeNames[:i], b.pendingTypeNames[i+1:]...)
+		}
+	}
 	return b
 }
 
