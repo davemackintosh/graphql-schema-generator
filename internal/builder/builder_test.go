@@ -4,13 +4,13 @@ package builder_test
 // X test that the builder is actually doing the right thing (i.e. that it's
 //   actually building the right thing) with a variety of different inputs
 // X test nested named structs get added to the schema
-// - test that anonymous structs get added to the schema and that they are
+// X test that anonymous structs get added to the schema and that they are
 //   named TheStructTheFieldIsEmbeddedIn_FieldName
-// - test recursive structs get added to the schema and don't cause infinite
+// X test recursive structs get added to the schema and don't cause infinite
 //   recursion/failures
-// - test that the builder can handle a struct with a field that is a pointer
+// X test that the builder can handle a struct with a field that is a pointer
 //   to a struct
-// - test that the builder can handle a struct with a field that is a slice of
+// X test that the builder can handle a struct with a field that is a slice of
 //   structs
 // - test that the builder can handle a struct with a field that is a map of
 //   structs
@@ -57,7 +57,17 @@ type UserDocument struct {
 	} `json:"meta" graphql:"description=The meta data of the document"`
 }
 
-func TestBuilder(t *testing.T) {
+type Project struct {
+	Meta map[string]string `json:"meta" graphql:"description=The meta data of the project"`
+}
+
+type Test struct {
+	name     string
+	expected builder.GraphQLSchemaBuilder
+	actual   builder.GraphQLSchemaBuilder
+}
+
+func TestBuilderStructSuite(t *testing.T) {
 	expectedMeta := builder.Struct{
 		Name: "UserDocument_Meta",
 		Fields: &[]*builder.Field{
@@ -211,11 +221,7 @@ func TestBuilder(t *testing.T) {
 		},
 	}
 
-	tests := []struct {
-		name     string
-		expected builder.GraphQLSchemaBuilder
-		actual   builder.GraphQLSchemaBuilder
-	}{
+	tests := []Test{
 		{
 			name: "TestBuilder_NestedFieldStructs",
 			actual: *builder.NewGraphQLSchemaBuilder(nil).AddStruct(UserDocument{
@@ -282,6 +288,45 @@ func TestBuilder(t *testing.T) {
 							{
 								Key:   "USER",
 								Value: RoleUser,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, tt.actual)
+		})
+	}
+}
+
+func TestBuilderMapSuite(t *testing.T) {
+	tests := []Test{
+		{
+			name:   "TestBuilder_Map",
+			actual: *builder.NewGraphQLSchemaBuilder(nil).AddStruct(Project{}, nil),
+			expected: builder.GraphQLSchemaBuilder{
+				Options: nil,
+				Structs: []*builder.Struct{
+					{
+						Name: "Project",
+						Fields: &[]*builder.Field{
+							{
+								Name:            "meta",
+								Type:            "map",
+								IsPointer:       false,
+								IsSlice:         false,
+								IsStruct:        false,
+								IncludeInOutput: true,
+								ParsedTag: &tagparser.Tag{
+									Options: map[string]string{
+										"description": "The meta data of the project",
+									},
+								},
 							},
 						},
 					},
