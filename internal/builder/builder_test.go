@@ -58,6 +58,80 @@ type UserDocument struct {
 }
 
 func TestBuilder(t *testing.T) {
+	expectedMeta := builder.Struct{
+		Name: "UserDocument_Meta",
+		Fields: &[]*builder.Field{
+			{
+				Name:            "author",
+				Type:            "string",
+				IncludeInOutput: true,
+				ParsedTag: &tagparser.Tag{
+					Options: map[string]string{
+						"description": "The author of the document",
+					},
+				},
+			},
+			{
+				Name:            "lastModified",
+				Type:            "string",
+				IncludeInOutput: true,
+				ParsedTag: &tagparser.Tag{
+					Options: map[string]string{
+						"description": "The last time the document was modified",
+					},
+				},
+			},
+		},
+	}
+	expectedUserDocument := builder.Struct{
+		Name: "UserDocument",
+		Fields: &[]*builder.Field{
+			{
+				Name:            "id",
+				Type:            "string",
+				IncludeInOutput: true,
+				ParsedTag: &tagparser.Tag{
+					Options: map[string]string{
+						"description": "The ID of the document",
+					},
+				},
+			},
+			{
+				Name:            "name",
+				Type:            "string",
+				IncludeInOutput: true,
+				ParsedTag: &tagparser.Tag{
+					Options: map[string]string{
+						"description": "The name of the document",
+					},
+				},
+			},
+			{
+				Name:            "editors",
+				Type:            "User",
+				IsPointer:       false,
+				IsSlice:         true,
+				IncludeInOutput: true,
+				ParsedTag: &tagparser.Tag{
+					Options: map[string]string{
+						"description": "The editors of the document",
+					},
+				},
+			},
+			{
+				Name:            "meta",
+				Type:            "UserDocument_Meta",
+				IsPointer:       false,
+				IncludeInOutput: true,
+				IsStruct:        true,
+				ParsedTag: &tagparser.Tag{
+					Options: map[string]string{
+						"description": "The meta data of the document",
+					},
+				},
+			},
+		},
+	}
 	expectedUser := builder.Struct{
 		Name: "User",
 		Fields: &[]*builder.Field{
@@ -122,6 +196,18 @@ func TestBuilder(t *testing.T) {
 					},
 				},
 			},
+			{
+				Name:            "documents",
+				Type:            "UserDocument",
+				IsPointer:       false,
+				IsSlice:         true,
+				IncludeInOutput: true,
+				ParsedTag: &tagparser.Tag{
+					Options: map[string]string{
+						"description": "The documents of the user",
+					},
+				},
+			},
 		},
 	}
 
@@ -150,80 +236,8 @@ func TestBuilder(t *testing.T) {
 				Options: nil,
 				Structs: []*builder.Struct{
 					&expectedUser,
-					{
-						Name: "UserDocument_Meta",
-						Fields: &[]*builder.Field{
-							{
-								Name:            "author",
-								Type:            "string",
-								IncludeInOutput: true,
-								ParsedTag: &tagparser.Tag{
-									Options: map[string]string{
-										"description": "The author of the document",
-									},
-								},
-							},
-							{
-								Name:            "lastModified",
-								Type:            "string",
-								IncludeInOutput: true,
-								ParsedTag: &tagparser.Tag{
-									Options: map[string]string{
-										"description": "The last time the document was modified",
-									},
-								},
-							},
-						},
-					},
-					{
-						Name: "UserDocument",
-						Fields: &[]*builder.Field{
-							{
-								Name:            "id",
-								Type:            "string",
-								IncludeInOutput: true,
-								ParsedTag: &tagparser.Tag{
-									Options: map[string]string{
-										"description": "The ID of the document",
-									},
-								},
-							},
-							{
-								Name:            "name",
-								Type:            "string",
-								IncludeInOutput: true,
-								ParsedTag: &tagparser.Tag{
-									Options: map[string]string{
-										"description": "The name of the document",
-									},
-								},
-							},
-							{
-								Name:            "editors",
-								Type:            "User",
-								IsPointer:       false,
-								IsSlice:         true,
-								IncludeInOutput: true,
-								ParsedTag: &tagparser.Tag{
-									Options: map[string]string{
-										"description": "The editors of the document",
-									},
-								},
-							},
-							{
-								Name:            "meta",
-								Type:            "UserDocument_Meta",
-								IsPointer:       false,
-								IncludeInOutput: true,
-								IsStruct:        true,
-								ParsedTag: &tagparser.Tag{
-									Options: map[string]string{
-										"description": "The meta data of the document",
-									},
-								},
-							},
-						},
-					},
+					&expectedMeta,
+					&expectedUserDocument,
 				},
 			},
 		},
@@ -234,13 +248,15 @@ func TestBuilder(t *testing.T) {
 			expected: builder.GraphQLSchemaBuilder{
 				Options: nil,
 				Structs: []*builder.Struct{
+					&expectedMeta,
+					&expectedUserDocument,
 					&expectedUser,
 				},
 			},
 		},
 		{
 			name: "TestBuilder_Enum",
-			actual: *builder.NewGraphQLSchemaBuilder(nil).AddEnum(builder.Enum{
+			actual: builder.NewGraphQLSchemaBuilder(nil).AddEnum(builder.Enum{
 				Name: "Roles",
 				Values: []*builder.EnumKeyPairOptions{
 					{
