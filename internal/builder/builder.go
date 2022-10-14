@@ -125,17 +125,28 @@ func (b *GraphQLSchemaBuilder) AddMap(name string, t interface{}) *GraphQLSchema
 		mapType = mapType.Elem()
 	}
 
+	// If it's a slice, then dig deeper.
+	if mapType.Kind() == reflect.Slice {
+		mapType = mapType.Elem()
+	}
+
+	// If it's a map, then dig deeper.
+	if mapType.Kind() == reflect.Map {
+		mapType = mapType.Elem()
+	}
+
 	// If the map type is to a struct then add it to the list of structs.
 	if mapType.Kind() == reflect.Struct {
 		if !b.structExistsAndIsntPending(mapType.Name()) {
 			name := mapType.Name()
-			b.AddStruct(mapType, &AddStructOptions{
+			b.AddStruct(reflect.Zero(mapType).Interface(), &AddStructOptions{
 				Name: &name,
 			})
 		}
 	}
 
-	// Create a new struct object (which we'll add to the maps list because technically, they're the same.) by looping through the fields of the incoming map type interface.
+	// Create a new struct object (which we'll add to the maps list because technically, they're the same.) by looping
+	// through the fields of the incoming map type interface.
 	s := &Map{
 		Name: name,
 		Field: Field{
@@ -156,7 +167,7 @@ func (b *GraphQLSchemaBuilder) AddMap(name string, t interface{}) *GraphQLSchema
 
 	// Remove the map from the list of pending maps.
 	for i, pendingName := range *b.pendingMapTypeNames {
-		if pendingName == reflect.TypeOf(t).Name() {
+		if pendingName == name {
 			*b.pendingMapTypeNames = append((*b.pendingMapTypeNames)[:i], (*b.pendingMapTypeNames)[i+1:]...)
 		}
 
@@ -191,6 +202,11 @@ func (b *GraphQLSchemaBuilder) AddStruct(t interface{}, options *AddStructOption
 
 	// Loop over the struct's fields and add them to the list of fields.
 	var fields []*Field
+
+	// if the struct is a pointer, then dig deeper.
+	if structType.Kind() == reflect.Ptr {
+		structType = structType.Elem()
+	}
 
 	for i := 0; i < structType.NumField(); i++ {
 		field := structType.Type().Field(i)
