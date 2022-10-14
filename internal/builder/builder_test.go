@@ -12,6 +12,7 @@ package builder_test
 //   to a struct
 // X test that the builder can handle a struct with a field that is a slice of
 //   structs
+// - test that the builder can handle a non-concrete type (i.e. an interface{})
 // - test that the builder can handle a struct with a field that is a map of
 //   structs
 // - test that the builder can handle a struct with a field that is a slice of
@@ -49,15 +50,15 @@ type UserDocument struct {
 	ID      string `json:"id" graphql:"description=The ID of the document"`
 	Name    string `json:"name" graphql:"description=The name of the document"`
 	Editors []User `json:"editors" graphql:"description=The editors of the document"`
-	// DocumentRules *map[string]string `json:"documentRules" graphql:"description=The rules for the document"`
-	// RoleRules     *map[Roles]string  `json:"roleRules" graphql:"description=The rules for the document"`
-	Meta struct {
+	Meta    struct {
 		Author       string `json:"author" graphql:"description=The author of the document"`
 		LastModified string `json:"lastModified" graphql:"description=The last time the document was modified"`
 	} `json:"meta" graphql:"description=The meta data of the document"`
 }
 
 type Project struct {
+	ID   string            `json:"id" graphql:"description=The ID of the project"`
+	Name string            `json:"name" graphql:"description=The name of the project"`
 	Meta map[string]string `json:"meta" graphql:"description=The meta data of the project"`
 }
 
@@ -223,40 +224,14 @@ func TestBuilderStructSuite(t *testing.T) {
 
 	tests := []Test{
 		{
-			name: "TestBuilder_NestedFieldStructs",
-			actual: *builder.NewGraphQLSchemaBuilder(nil).AddStruct(UserDocument{
-				ID:   "123",
-				Name: "Test",
-				Editors: []User{
-					{},
-				},
-				Meta: struct {
-					Author       string `json:"author" graphql:"description=The author of the document"`
-					LastModified string `json:"lastModified" graphql:"description=The last time the document was modified"`
-				}{
-					Author:       "Test",
-					LastModified: "Test",
-				},
-			}, nil),
+			name:   "TestBuilder_NestedFieldStructs",
+			actual: *builder.NewGraphQLSchemaBuilder(nil).AddStruct(UserDocument{}, nil),
 			expected: builder.GraphQLSchemaBuilder{
 				Options: nil,
 				Structs: []*builder.Struct{
 					&expectedUser,
 					&expectedMeta,
 					&expectedUserDocument,
-				},
-			},
-		},
-		{
-			name: "TestBuilder_Struct",
-			actual: *builder.NewGraphQLSchemaBuilder(nil).
-				AddStruct(User{}, nil),
-			expected: builder.GraphQLSchemaBuilder{
-				Options: nil,
-				Structs: []*builder.Struct{
-					&expectedMeta,
-					&expectedUserDocument,
-					&expectedUser,
 				},
 			},
 		},
@@ -304,11 +279,25 @@ func TestBuilderStructSuite(t *testing.T) {
 	}
 }
 
-func TestBuilderMapSuite(t *testing.T) {
+func TestBuilder_Map(t *testing.T) {
+	project := Project{}
 	tests := []Test{
 		{
 			name:   "TestBuilder_Map",
-			actual: *builder.NewGraphQLSchemaBuilder(nil).AddStruct(Project{}, nil),
+			actual: *builder.NewGraphQLSchemaBuilder(nil).AddMap("ProjectMeta", project.Meta, nil),
+			expected: builder.GraphQLSchemaBuilder{
+				Options: nil,
+				Maps: []*builder.Map{
+					{
+						Name:   "ProjectMeta",
+						Fields: &[]*builder.Field{},
+					},
+				},
+			},
+		},
+		{
+			name:   "TestBuilder_StructWithMap",
+			actual: *builder.NewGraphQLSchemaBuilder(nil).AddStruct(project, nil),
 			expected: builder.GraphQLSchemaBuilder{
 				Options: nil,
 				Structs: []*builder.Struct{
@@ -316,11 +305,29 @@ func TestBuilderMapSuite(t *testing.T) {
 						Name: "Project",
 						Fields: &[]*builder.Field{
 							{
+								Name:            "id",
+								Type:            "string",
+								IncludeInOutput: true,
+								ParsedTag: &tagparser.Tag{
+									Options: map[string]string{
+										"description": "The ID of the project",
+									},
+								},
+							},
+							{
+								Name:            "name",
+								Type:            "string",
+								IncludeInOutput: true,
+								ParsedTag: &tagparser.Tag{
+									Options: map[string]string{
+										"description": "The name of the project",
+									},
+								},
+							},
+							{
 								Name:            "meta",
-								Type:            "map",
-								IsPointer:       false,
-								IsSlice:         false,
-								IsStruct:        false,
+								Type:            "string",
+								IsMap:           true,
 								IncludeInOutput: true,
 								ParsedTag: &tagparser.Tag{
 									Options: map[string]string{
@@ -329,6 +336,12 @@ func TestBuilderMapSuite(t *testing.T) {
 								},
 							},
 						},
+					},
+				},
+				Maps: []*builder.Map{
+					{
+						Name:   "ProjectMeta",
+						Fields: &[]*builder.Field{},
 					},
 				},
 			},

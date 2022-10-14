@@ -14,11 +14,18 @@ type Field struct {
 	IsSlice         bool
 	IsPointer       bool
 	IsStruct        bool
+	IsMap           bool
+	IsEnum          bool
 	IncludeInOutput bool
 	ParsedTag       *tagparser.Tag
 }
 
 type Struct struct {
+	Name   string
+	Fields *[]*Field
+}
+
+type Map struct {
 	Name   string
 	Fields *[]*Field
 }
@@ -45,13 +52,15 @@ type GraphQLSchemaBuilderOptions struct {
 
 type GraphQLSchemaBuilder struct {
 	Structs []*Struct
+	Maps    []*Map
 	Enums   []*Enum
 	Options *GraphQLSchemaBuilderOptions
 
 	// Keep a list of types that are pending being added to the schema.
 	// This is used to prevent infinite recursion when a struct has a field that is a pointer to itself
 	// or a slice of itself or when structs have circular references.
-	pendingTypeNames *[]string
+	pendingStructTypeNames *[]string
+	pendingMapTypeNames    *[]string
 }
 
 func NewGraphQLSchemaBuilder(options *GraphQLSchemaBuilderOptions) *GraphQLSchemaBuilder {
@@ -80,8 +89,8 @@ type AddStructOptions struct {
 
 // A function that returns a boolean whether a struct exists by this name or is pending.
 func (b GraphQLSchemaBuilder) structExistsAndIsntPending(name string) bool {
-	if b.pendingTypeNames != nil {
-		for _, pendingName := range *b.pendingTypeNames {
+	if b.pendingStructTypeNames != nil {
+		for _, pendingName := range *b.pendingStructTypeNames {
 			if pendingName == name {
 				return true
 			}
@@ -95,6 +104,68 @@ func (b GraphQLSchemaBuilder) structExistsAndIsntPending(name string) bool {
 	}
 
 	return false
+}
+
+func (b *GraphQLSchemaBuilder) AddMap(name string, t interface{}, knownFields *[]string) *GraphQLSchemaBuilder {
+	// Add this map to the list of pending maps.
+	if b.pendingMapTypeNames == nil {
+		b.pendingMapTypeNames = &[]string{
+			reflect.TypeOf(t).Name(),
+		}
+	} else {
+		*b.pendingMapTypeNames = append(*b.pendingMapTypeNames, reflect.TypeOf(t).Name())
+	}
+
+	// Get the type the map is to.
+	mapType := reflect.TypeOf(t).Elem()
+
+	// if the map type is to a pointer then dig deeper.
+	if mapType.Kind() == reflect.Ptr {
+		mapType = mapType.Elem()
+	}
+
+	fields := []*Field{}
+
+	// Loop through the known fields and add them to the map.
+	if knownFields != nil {
+		for _, fieldName := range *knownFields {
+			field := &Field{
+				Name:            fieldName,
+				Type:            mapType.Elem().Name(),
+				IsSlice:         reflect.TypeOf(t).Elem().Kind() == reflect.Slice,
+				IsPointer:       reflect.TypeOf(t).Elem().Kind() == reflect.Ptr,
+				IsStruct:        mapType.Kind() == reflect.Struct,
+				IsMap:           mapType.Kind() == reflect.Map,
+				IsEnum:          false,
+				IncludeInOutput: true,
+				ParsedTag:       nil,
+			}
+
+			// Add the field to the list of fields.
+			fields = append(fields, field)
+		}
+	}
+
+	// Create a new struct object (which we'll add to the maps list because technically, they're the same.) by looping through the fields of the incoming map type interface.
+	s := &Map{
+		Name:   name,
+		Fields: &fields,
+	}
+
+	b.Maps = append(b.Maps, s)
+
+	// Remove the map from the list of pending maps.
+	for i, pendingName := range *b.pendingMapTypeNames {
+		if pendingName == reflect.TypeOf(t).Name() {
+			*b.pendingMapTypeNames = append((*b.pendingMapTypeNames)[:i], (*b.pendingMapTypeNames)[i+1:]...)
+		}
+
+		if len(*b.pendingMapTypeNames) == 0 {
+			b.pendingMapTypeNames = nil
+		}
+	}
+
+	return b
 }
 
 func (b *GraphQLSchemaBuilder) AddStruct(t interface{}, options *AddStructOptions) *GraphQLSchemaBuilder { //nolint: cyclop
@@ -111,12 +182,12 @@ func (b *GraphQLSchemaBuilder) AddStruct(t interface{}, options *AddStructOption
 	}
 
 	// Check if pending types has been initialized.
-	if b.pendingTypeNames == nil {
-		b.pendingTypeNames = &[]string{}
+	if b.pendingStructTypeNames == nil {
+		b.pendingStructTypeNames = &[]string{}
 	}
 
 	// Add this struct to the pending list.
-	*b.pendingTypeNames = append(*b.pendingTypeNames, structName)
+	*b.pendingStructTypeNames = append(*b.pendingStructTypeNames, structName)
 
 	// Loop over the struct's fields and add them to the list of fields.
 	var fields []*Field
@@ -169,12 +240,18 @@ func (b *GraphQLSchemaBuilder) AddStruct(t interface{}, options *AddStructOption
 					Name: &targetName,
 				})
 			}
+		} else if fieldType.Kind() == reflect.Map {
+			// If the field is a map add it to the list of maps.
+			b.AddMap(fmt.Sprintf("%s%s", structName, field.Name), structType.Field(i).Interface(), nil)
 		}
 
 		fieldName := field.Name
 
-		// If the fieldTypeName has a period in it, it's a package name.Type and we only want the type name.
-		if strings.Contains(fieldTypeName, ".") {
+		// if the fieldTypeName starts with map then we need to get the type of the map.
+		if strings.HasPrefix(fieldTypeName, "map") {
+			fieldTypeName = strings.Split(fieldTypeName, "]")[1]
+		} else if strings.Contains(fieldTypeName, ".") {
+			// If the fieldTypeName has a period in it, it's a package name.Type and we only want the type name.
 			fieldTypeNameParts := strings.Split(fieldTypeName, ".")
 			fieldTypeName = fieldTypeNameParts[len(fieldTypeNameParts)-1]
 		}
@@ -194,6 +271,7 @@ func (b *GraphQLSchemaBuilder) AddStruct(t interface{}, options *AddStructOption
 			IsPointer:       field.Type.Kind() == reflect.Ptr,
 			IsSlice:         field.Type.Kind() == reflect.Slice,
 			IsStruct:        field.Type.Kind() == reflect.Struct,
+			IsMap:           field.Type.Kind() == reflect.Map,
 			ParsedTag:       tagparser.ParseTag(field.Tag.Get("graphql"), field.Name),
 			IncludeInOutput: field.Tag.Get("graphql") != "-" && field.Tag.Get("json") != "-",
 		})
@@ -205,13 +283,13 @@ func (b *GraphQLSchemaBuilder) AddStruct(t interface{}, options *AddStructOption
 	})
 
 	// Remove the struct name from the pending list.
-	for i, pendingName := range *b.pendingTypeNames {
+	for i, pendingName := range *b.pendingStructTypeNames {
 		if pendingName == structName {
-			*b.pendingTypeNames = append((*b.pendingTypeNames)[:i], (*b.pendingTypeNames)[i+1:]...)
+			*b.pendingStructTypeNames = append((*b.pendingStructTypeNames)[:i], (*b.pendingStructTypeNames)[i+1:]...)
 		}
 
-		if len(*b.pendingTypeNames) == 0 {
-			b.pendingTypeNames = nil
+		if len(*b.pendingStructTypeNames) == 0 {
+			b.pendingStructTypeNames = nil
 		}
 	}
 
