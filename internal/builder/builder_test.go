@@ -365,7 +365,6 @@ func TestBuilder_Map(t *testing.T) {
 	}
 }
 
-/*
 type Title struct {
 	ID                  string             `json:"id" graphql:"description=The ID of the title"`
 	Name                string             `json:"name" graphql:"description=The name of the title"`
@@ -427,6 +426,7 @@ func TestBuilder_ComplexDVDStore(t *testing.T) {
 							{
 								Name:            "rentalPrice",
 								Type:            "number",
+								IsPointer:       true,
 								IncludeInOutput: true,
 								ParsedTag: &tagparser.Tag{
 									Options: map[string]string{
@@ -437,6 +437,7 @@ func TestBuilder_ComplexDVDStore(t *testing.T) {
 							{
 								Name:            "buyPrice",
 								Type:            "number",
+								IsPointer:       true,
 								IncludeInOutput: true,
 								ParsedTag: &tagparser.Tag{
 									Options: map[string]string{
@@ -517,8 +518,12 @@ func TestBuilder_ComplexDVDStore(t *testing.T) {
 				},
 				Maps: []*builder.Map{
 					{
-						Name:   "AvailableTitles",
-						Fields: &[]*builder.Field{},
+						Name: "DvdStoreAvailableTitles",
+						Field: builder.Field{
+							Type:            "Title",
+							IsSlice:         true,
+							IncludeInOutput: true,
+						},
 					},
 				},
 			},
@@ -531,4 +536,4 @@ func TestBuilder_ComplexDVDStore(t *testing.T) {
 			assert.Equal(t, tt.expected, tt.actual)
 		})
 	}
-}*/
+}

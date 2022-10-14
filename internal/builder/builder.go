@@ -125,6 +125,16 @@ func (b *GraphQLSchemaBuilder) AddMap(name string, t interface{}) *GraphQLSchema
 		mapType = mapType.Elem()
 	}
 
+	// If the map type is to a struct then add it to the list of structs.
+	if mapType.Kind() == reflect.Struct {
+		if !b.structExistsAndIsntPending(mapType.Name()) {
+			name := mapType.Name()
+			b.AddStruct(mapType, &AddStructOptions{
+				Name: &name,
+			})
+		}
+	}
+
 	// Create a new struct object (which we'll add to the maps list because technically, they're the same.) by looping through the fields of the incoming map type interface.
 	s := &Map{
 		Name: name,
@@ -239,9 +249,12 @@ func (b *GraphQLSchemaBuilder) AddStruct(t interface{}, options *AddStructOption
 
 		// if the fieldTypeName starts with map then we need to get the type of the map.
 		if strings.HasPrefix(fieldTypeName, "map") {
-			fieldTypeName = strings.Split(fieldTypeName, "]")[1]
-		} else if strings.Contains(fieldTypeName, ".") {
-			// If the fieldTypeName has a period in it, it's a package name.Type and we only want the type name.
+			parts := strings.Split(fieldTypeName, "]")
+			fieldTypeName = parts[len(parts)-1]
+		}
+
+		// If the fieldTypeName has a period in it, it's a package name.Type and we only want the type name.
+		if strings.Contains(fieldTypeName, ".") {
 			fieldTypeNameParts := strings.Split(fieldTypeName, ".")
 			fieldTypeName = fieldTypeNameParts[len(fieldTypeNameParts)-1]
 		}
