@@ -26,8 +26,9 @@ type Struct struct {
 }
 
 type Map struct {
-	Name   string
-	Fields *[]*Field
+	Name    string
+	KeyType string
+	Field   Field
 }
 
 type EnumKeyPairOptions struct {
@@ -106,7 +107,7 @@ func (b GraphQLSchemaBuilder) structExistsAndIsntPending(name string) bool {
 	return false
 }
 
-func (b *GraphQLSchemaBuilder) AddMap(name string, t interface{}, knownFields *[]string) *GraphQLSchemaBuilder {
+func (b *GraphQLSchemaBuilder) AddMap(name string, t interface{}) *GraphQLSchemaBuilder {
 	// Add this map to the list of pending maps.
 	if b.pendingMapTypeNames == nil {
 		b.pendingMapTypeNames = &[]string{
@@ -124,32 +125,21 @@ func (b *GraphQLSchemaBuilder) AddMap(name string, t interface{}, knownFields *[
 		mapType = mapType.Elem()
 	}
 
-	fields := []*Field{}
-
-	// Loop through the known fields and add them to the map.
-	if knownFields != nil {
-		for _, fieldName := range *knownFields {
-			field := &Field{
-				Name:            fieldName,
-				Type:            mapType.Elem().Name(),
-				IsSlice:         reflect.TypeOf(t).Elem().Kind() == reflect.Slice,
-				IsPointer:       reflect.TypeOf(t).Elem().Kind() == reflect.Ptr,
-				IsStruct:        mapType.Kind() == reflect.Struct,
-				IsMap:           mapType.Kind() == reflect.Map,
-				IsEnum:          false,
-				IncludeInOutput: true,
-				ParsedTag:       nil,
-			}
-
-			// Add the field to the list of fields.
-			fields = append(fields, field)
-		}
-	}
-
 	// Create a new struct object (which we'll add to the maps list because technically, they're the same.) by looping through the fields of the incoming map type interface.
 	s := &Map{
-		Name:   name,
-		Fields: &fields,
+		Name: name,
+		Field: Field{
+			Name:            "",
+			Type:            mapType.Name(),
+			IsSlice:         reflect.TypeOf(t).Elem().Kind() == reflect.Slice,
+			IsPointer:       reflect.TypeOf(t).Elem().Kind() == reflect.Ptr,
+			IsStruct:        mapType.Kind() == reflect.Struct,
+			IsMap:           mapType.Kind() == reflect.Map,
+			IsEnum:          false,
+			IncludeInOutput: true,
+			// Maps don't have tags.
+			ParsedTag: nil,
+		},
 	}
 
 	b.Maps = append(b.Maps, s)
@@ -242,7 +232,7 @@ func (b *GraphQLSchemaBuilder) AddStruct(t interface{}, options *AddStructOption
 			}
 		} else if fieldType.Kind() == reflect.Map {
 			// If the field is a map add it to the list of maps.
-			b.AddMap(fmt.Sprintf("%s%s", structName, field.Name), structType.Field(i).Interface(), nil)
+			b.AddMap(fmt.Sprintf("%s%s", structName, field.Name), structType.Field(i).Interface())
 		}
 
 		fieldName := field.Name

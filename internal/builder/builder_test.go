@@ -56,12 +56,6 @@ type UserDocument struct {
 	} `json:"meta" graphql:"description=The meta data of the document"`
 }
 
-type Project struct {
-	ID   string            `json:"id" graphql:"description=The ID of the project"`
-	Name string            `json:"name" graphql:"description=The name of the project"`
-	Meta map[string]string `json:"meta" graphql:"description=The meta data of the project"`
-}
-
 type Test struct {
 	name     string
 	expected builder.GraphQLSchemaBuilder
@@ -279,18 +273,28 @@ func TestBuilderStructSuite(t *testing.T) {
 	}
 }
 
+type Project struct {
+	ID   string            `json:"id" graphql:"description=The ID of the project"`
+	Name string            `json:"name" graphql:"description=The name of the project"`
+	Meta map[string]string `json:"meta" graphql:"description=The meta data of the project"`
+}
+
 func TestBuilder_Map(t *testing.T) {
 	project := Project{}
 	tests := []Test{
 		{
 			name:   "TestBuilder_Map",
-			actual: *builder.NewGraphQLSchemaBuilder(nil).AddMap("ProjectMeta", project.Meta, nil),
+			actual: *builder.NewGraphQLSchemaBuilder(nil).AddMap("ProjectMeta", project.Meta),
 			expected: builder.GraphQLSchemaBuilder{
 				Options: nil,
 				Maps: []*builder.Map{
 					{
-						Name:   "ProjectMeta",
-						Fields: &[]*builder.Field{},
+						Name: "ProjectMeta",
+						Field: builder.Field{
+							Name:            "",
+							Type:            "string",
+							IncludeInOutput: true,
+						},
 					},
 				},
 			},
@@ -340,8 +344,13 @@ func TestBuilder_Map(t *testing.T) {
 				},
 				Maps: []*builder.Map{
 					{
-						Name:   "ProjectMeta",
-						Fields: &[]*builder.Field{},
+						Name: "ProjectMeta",
+						Field: builder.Field{
+							Name:            "",
+							Type:            "string",
+							IncludeInOutput: true,
+							ParsedTag:       nil,
+						},
 					},
 				},
 			},
@@ -355,3 +364,171 @@ func TestBuilder_Map(t *testing.T) {
 		})
 	}
 }
+
+/*
+type Title struct {
+	ID                  string             `json:"id" graphql:"description=The ID of the title"`
+	Name                string             `json:"name" graphql:"description=The name of the title"`
+	RentalPrice         *int               `json:"rentalPrice" graphql:"description=The rental price of the title"`
+	BuyPrice            *int               `json:"buyPrice" graphql:"description=The buy price of the title"`
+	Credits             *map[string]string `json:"credits" graphql:"description=The credits of the title"`
+	headOfficeReference string
+}
+
+type Shelf uint
+
+const (
+	ShelfAction Shelf = iota
+	ShelfAdventure
+	ShelfComedy
+	ShelfDrama
+	ShelfHorror
+)
+
+type DvdStore struct {
+	ID              string            `json:"id" graphql:"description=The ID of the DVD store"`
+	Name            string            `json:"name" graphql:"description=The name of the DVD store"`
+	Address         string            `json:"address" graphql:"description=The address of the DVD store"`
+	PhoneNumber     string            `json:"phoneNumber" graphql:"description=The phone number of the DVD store"`
+	AvailableTitles map[Shelf][]Title `json:"availableTitles" graphql:"description=The available titles of the DVD store"`
+}
+
+func TestBuilder_ComplexDVDStore(t *testing.T) {
+	tests := []Test{
+		{
+			name:   "TestBuilder_ComplexDVDStore",
+			actual: *builder.NewGraphQLSchemaBuilder(nil).AddStruct(DvdStore{}, nil),
+			expected: builder.GraphQLSchemaBuilder{
+				Options: nil,
+				Structs: []*builder.Struct{
+					{
+						Name: "Title",
+						Fields: &[]*builder.Field{
+							{
+								Name:            "id",
+								Type:            "string",
+								IncludeInOutput: true,
+								ParsedTag: &tagparser.Tag{
+									Options: map[string]string{
+										"description": "The ID of the title",
+									},
+								},
+							},
+							{
+								Name:            "name",
+								Type:            "string",
+								IncludeInOutput: true,
+								ParsedTag: &tagparser.Tag{
+									Options: map[string]string{
+										"description": "The name of the title",
+									},
+								},
+							},
+							{
+								Name:            "rentalPrice",
+								Type:            "number",
+								IncludeInOutput: true,
+								ParsedTag: &tagparser.Tag{
+									Options: map[string]string{
+										"description": "The rental price of the title",
+									},
+								},
+							},
+							{
+								Name:            "buyPrice",
+								Type:            "number",
+								IncludeInOutput: true,
+								ParsedTag: &tagparser.Tag{
+									Options: map[string]string{
+										"description": "The buy price of the title",
+									},
+								},
+							},
+							{
+								Name:            "credits",
+								Type:            "string",
+								IsMap:           true,
+								IncludeInOutput: true,
+								ParsedTag: &tagparser.Tag{
+									Options: map[string]string{
+										"description": "The credits of the title",
+									},
+								},
+							},
+						},
+					},
+					{
+						Name: "DvdStore",
+						Fields: &[]*builder.Field{
+							{
+								Name:            "id",
+								Type:            "string",
+								IncludeInOutput: true,
+								ParsedTag: &tagparser.Tag{
+									Options: map[string]string{
+										"description": "The ID of the DVD store",
+									},
+								},
+							},
+							{
+								Name:            "name",
+								Type:            "string",
+								IncludeInOutput: true,
+								ParsedTag: &tagparser.Tag{
+									Options: map[string]string{
+										"description": "The name of the DVD store",
+									},
+								},
+							},
+							{
+								Name:            "address",
+								Type:            "string",
+								IncludeInOutput: true,
+								ParsedTag: &tagparser.Tag{
+									Options: map[string]string{
+										"description": "The address of the DVD store",
+									},
+								},
+							},
+							{
+								Name:            "phoneNumber",
+								Type:            "string",
+								IncludeInOutput: true,
+								IsPointer:       true,
+								ParsedTag: &tagparser.Tag{
+									Options: map[string]string{
+										"description": "The phone number of the DVD store",
+									},
+								},
+							},
+							{
+								Name:            "availableTitles",
+								Type:            "AvailableTitles",
+								IsMap:           true,
+								IncludeInOutput: true,
+								ParsedTag: &tagparser.Tag{
+									Options: map[string]string{
+										"description": "The available titles of the DVD store",
+									},
+								},
+							},
+						},
+					},
+				},
+				Maps: []*builder.Map{
+					{
+						Name:   "AvailableTitles",
+						Fields: &[]*builder.Field{},
+					},
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, tt.actual)
+		})
+	}
+}*/
