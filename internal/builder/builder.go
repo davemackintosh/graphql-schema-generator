@@ -69,15 +69,7 @@ func NewGraphQLSchemaBuilder(options *GraphQLSchemaBuilderOptions) *GraphQLSchem
 	}
 }
 
-func (b GraphQLSchemaBuilder) AddMutation(name, typeName string, description *string) GraphQLSchemaBuilder {
-	return b
-}
-
-func (b GraphQLSchemaBuilder) AddQuery(name, typeName string, description *string) GraphQLSchemaBuilder {
-	return b
-}
-
-func (b GraphQLSchemaBuilder) AddEnum(enum Enum) GraphQLSchemaBuilder {
+func (b *GraphQLSchemaBuilder) AddEnum(enum Enum) *GraphQLSchemaBuilder {
 	b.Enums = append(b.Enums, &enum)
 
 	return b
@@ -106,9 +98,50 @@ func (b GraphQLSchemaBuilder) structExistsAndIsntPending(name string) bool {
 	return false
 }
 
+func stringInSlice(a string, list []string) bool {
+	for _, b := range list {
+		if b == a {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (b *GraphQLSchemaBuilder) AddMap(name string, t interface{}) *GraphQLSchemaBuilder {
+	// A slice of all of go's built in types used to check if a type is a built-in.
+	// If it isn't then we can assume it's an enum key strategy and register it as an enum.
+	builtInTypes := [22]string{
+		"bool",
+		"byte",
+		"complex64",
+		"complex128",
+		"error",
+		"float",
+		"float32",
+		"float64",
+		"int",
+		"int8",
+		"int16",
+		"int32",
+		"int64",
+		"rune",
+		"string",
+		"uint",
+		"uint8",
+		"uint16",
+		"uint32",
+		"uint64",
+		"uintptr",
+		"string",
+	}
 	// Get the type the map is to.
-	mapType := reflect.TypeOf(t).Elem()
+	baseType := reflect.TypeOf(t)
+	if baseType.Kind() == reflect.Ptr {
+		baseType = baseType.Elem()
+	}
+
+	mapType := baseType.Elem()
 
 	// if the map type is to a pointer then dig deeper.
 	if mapType.Kind() == reflect.Ptr {
@@ -137,8 +170,19 @@ func (b *GraphQLSchemaBuilder) AddMap(name string, t interface{}) *GraphQLSchema
 
 	// Create a new struct object (which we'll add to the maps list because technically, they're the same.) by looping
 	// through the fields of the incoming map type interface.
+	keyType := baseType.Key().Name()
+
+	// if the key type isn't built in, it's going to be an enum type string.
+	if !stringInSlice(keyType, builtInTypes[:]) {
+		b.AddEnum(Enum{
+			Name:   keyType,
+			Values: []*EnumKeyPairOptions{},
+		})
+	}
+
 	s := &Map{
-		Name: name,
+		Name:    name,
+		KeyType: keyType,
 		Field: Field{
 			Name:            "",
 			Type:            mapType.Name(),
@@ -291,14 +335,6 @@ func (b *GraphQLSchemaBuilder) AddStruct(t interface{}, options *AddStructOption
 		}
 	}
 
-	return b
-}
-
-func (b *GraphQLSchemaBuilder) Returns(typeName string, description *string) *GraphQLSchemaBuilder {
-	return b
-}
-
-func (b *GraphQLSchemaBuilder) WithInputType(t interface{}) *GraphQLSchemaBuilder {
 	return b
 }
 

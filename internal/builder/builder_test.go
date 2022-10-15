@@ -231,7 +231,7 @@ func TestBuilderStructSuite(t *testing.T) {
 		},
 		{
 			name: "TestBuilder_Enum",
-			actual: builder.NewGraphQLSchemaBuilder(nil).AddEnum(builder.Enum{
+			actual: *builder.NewGraphQLSchemaBuilder(nil).AddEnum(builder.Enum{
 				Name: "Roles",
 				Values: []*builder.EnumKeyPairOptions{
 					{
@@ -425,7 +425,7 @@ func TestBuilder_ComplexDVDStore(t *testing.T) {
 							},
 							{
 								Name:            "rentalPrice",
-								Type:            "number",
+								Type:            "int",
 								IsPointer:       true,
 								IncludeInOutput: true,
 								ParsedTag: &tagparser.Tag{
@@ -436,7 +436,7 @@ func TestBuilder_ComplexDVDStore(t *testing.T) {
 							},
 							{
 								Name:            "buyPrice",
-								Type:            "number",
+								Type:            "int",
 								IsPointer:       true,
 								IncludeInOutput: true,
 								ParsedTag: &tagparser.Tag{
@@ -447,7 +447,7 @@ func TestBuilder_ComplexDVDStore(t *testing.T) {
 							},
 							{
 								Name:            "credits",
-								Type:            "string",
+								Type:            "TitleCredits",
 								IsMap:           true,
 								IncludeInOutput: true,
 								ParsedTag: &tagparser.Tag{
@@ -455,6 +455,12 @@ func TestBuilder_ComplexDVDStore(t *testing.T) {
 										"description": "The credits of the title",
 									},
 								},
+							},
+							{
+								Name:            "headOfficeReference",
+								Type:            "string",
+								IncludeInOutput: false,
+								ParsedTag:       nil,
 							},
 						},
 					},
@@ -516,19 +522,26 @@ func TestBuilder_ComplexDVDStore(t *testing.T) {
 						},
 					},
 				},
+				Enums: []*builder.Enum{
+					{
+						Name: "DvdStoreShelf",
+					},
+				},
 				Maps: []*builder.Map{
 					{
-						Name: "DvdStoreAvailableTitles",
+						Name:    "TitleCredits",
+						KeyType: "string",
 						Field: builder.Field{
-							Type:            "Title",
-							IsSlice:         true,
+							Type:            "string",
 							IncludeInOutput: true,
 						},
 					},
 					{
-						Name: "TitleCredits",
+						Name:    "DvdStoreAvailableTitles",
+						KeyType: "Shelf",
 						Field: builder.Field{
-							Type:            "string",
+							Type:            "Title",
+							IsSlice:         true,
 							IncludeInOutput: true,
 						},
 					},
