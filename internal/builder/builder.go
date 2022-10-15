@@ -61,7 +61,6 @@ type GraphQLSchemaBuilder struct {
 	// This is used to prevent infinite recursion when a struct has a field that is a pointer to itself
 	// or a slice of itself or when structs have circular references.
 	pendingStructTypeNames *[]string
-	pendingMapTypeNames    *[]string
 }
 
 func NewGraphQLSchemaBuilder(options *GraphQLSchemaBuilderOptions) *GraphQLSchemaBuilder {
@@ -108,15 +107,6 @@ func (b GraphQLSchemaBuilder) structExistsAndIsntPending(name string) bool {
 }
 
 func (b *GraphQLSchemaBuilder) AddMap(name string, t interface{}) *GraphQLSchemaBuilder {
-	// Add this map to the list of pending maps.
-	if b.pendingMapTypeNames == nil {
-		b.pendingMapTypeNames = &[]string{
-			reflect.TypeOf(t).Name(),
-		}
-	} else {
-		*b.pendingMapTypeNames = append(*b.pendingMapTypeNames, reflect.TypeOf(t).Name())
-	}
-
 	// Get the type the map is to.
 	mapType := reflect.TypeOf(t).Elem()
 
@@ -164,17 +154,6 @@ func (b *GraphQLSchemaBuilder) AddMap(name string, t interface{}) *GraphQLSchema
 	}
 
 	b.Maps = append(b.Maps, s)
-
-	// Remove the map from the list of pending maps.
-	for i, pendingName := range *b.pendingMapTypeNames {
-		if pendingName == name {
-			*b.pendingMapTypeNames = append((*b.pendingMapTypeNames)[:i], (*b.pendingMapTypeNames)[i+1:]...)
-		}
-
-		if len(*b.pendingMapTypeNames) == 0 {
-			b.pendingMapTypeNames = nil
-		}
-	}
 
 	return b
 }

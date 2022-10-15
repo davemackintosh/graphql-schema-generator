@@ -504,7 +504,7 @@ func TestBuilder_ComplexDVDStore(t *testing.T) {
 							},
 							{
 								Name:            "availableTitles",
-								Type:            "AvailableTitles",
+								Type:            "DvdStoreAvailableTitles",
 								IsMap:           true,
 								IncludeInOutput: true,
 								ParsedTag: &tagparser.Tag{
@@ -522,6 +522,13 @@ func TestBuilder_ComplexDVDStore(t *testing.T) {
 						Field: builder.Field{
 							Type:            "Title",
 							IsSlice:         true,
+							IncludeInOutput: true,
+						},
+					},
+					{
+						Name: "TitleCredits",
+						Field: builder.Field{
+							Type:            "string",
 							IncludeInOutput: true,
 						},
 					},
