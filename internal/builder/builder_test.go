@@ -289,7 +289,8 @@ func TestBuilder_Map(t *testing.T) {
 				Options: nil,
 				Maps: []*builder.Map{
 					{
-						Name: "ProjectMeta",
+						Name:    "ProjectMeta",
+						KeyType: "string",
 						Field: builder.Field{
 							Name:            "",
 							Type:            "string",
@@ -344,7 +345,8 @@ func TestBuilder_Map(t *testing.T) {
 				},
 				Maps: []*builder.Map{
 					{
-						Name: "ProjectMeta",
+						Name:    "ProjectMeta",
+						KeyType: "string",
 						Field: builder.Field{
 							Name:            "",
 							Type:            "string",
@@ -448,6 +450,7 @@ func TestBuilder_ComplexDVDStore(t *testing.T) {
 							{
 								Name:            "credits",
 								Type:            "TitleCredits",
+								IsPointer:       true,
 								IsMap:           true,
 								IncludeInOutput: true,
 								ParsedTag: &tagparser.Tag{
@@ -510,7 +513,7 @@ func TestBuilder_ComplexDVDStore(t *testing.T) {
 							},
 							{
 								Name:            "availableTitles",
-								Type:            "DvdStoreAvailableTitles",
+								Type:            "Title",
 								IsMap:           true,
 								IncludeInOutput: true,
 								ParsedTag: &tagparser.Tag{
@@ -524,7 +527,8 @@ func TestBuilder_ComplexDVDStore(t *testing.T) {
 				},
 				Enums: []*builder.Enum{
 					{
-						Name: "DvdStoreShelf",
+						Name:   "DvdStoreAvailableTitlesShelf",
+						Values: []*builder.EnumKeyPairOptions{},
 					},
 				},
 				Maps: []*builder.Map{

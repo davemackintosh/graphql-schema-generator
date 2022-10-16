@@ -175,7 +175,7 @@ func (b *GraphQLSchemaBuilder) AddMap(name string, t interface{}) *GraphQLSchema
 	// if the key type isn't built in, it's going to be an enum type string.
 	if !stringInSlice(keyType, builtInTypes[:]) {
 		b.AddEnum(Enum{
-			Name:   keyType,
+			Name:   fmt.Sprintf("%s%s", name, keyType),
 			Values: []*EnumKeyPairOptions{},
 		})
 	}
@@ -186,10 +186,10 @@ func (b *GraphQLSchemaBuilder) AddMap(name string, t interface{}) *GraphQLSchema
 		Field: Field{
 			Name:            "",
 			Type:            mapType.Name(),
-			IsSlice:         reflect.TypeOf(t).Elem().Kind() == reflect.Slice,
-			IsPointer:       reflect.TypeOf(t).Elem().Kind() == reflect.Ptr,
-			IsStruct:        mapType.Kind() == reflect.Struct,
-			IsMap:           mapType.Kind() == reflect.Map,
+			IsSlice:         reflect.TypeOf(t).Kind() == reflect.Slice,
+			IsPointer:       reflect.TypeOf(t).Kind() == reflect.Ptr,
+			IsStruct:        false,
+			IsMap:           false,
 			IsEnum:          false,
 			IncludeInOutput: true,
 			// Maps don't have tags.
