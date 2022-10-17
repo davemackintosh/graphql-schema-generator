@@ -368,11 +368,11 @@ func TestBuilder_Map(t *testing.T) {
 }
 
 type Title struct {
-	ID                  string             `json:"id" graphql:"description=The ID of the title"`
-	Name                string             `json:"name" graphql:"description=The name of the title"`
-	RentalPrice         *int               `json:"rentalPrice" graphql:"description=The rental price of the title"`
-	BuyPrice            *int               `json:"buyPrice" graphql:"description=The buy price of the title"`
-	Credits             *map[string]string `json:"credits" graphql:"description=The credits of the title"`
+	ID                  string              `json:"id" graphql:"description=The ID of the title"`
+	Name                string              `json:"name" graphql:"description=The name of the title"`
+	RentalPrice         *int                `json:"rentalPrice" graphql:"description=The rental price of the title"`
+	BuyPrice            *int                `json:"buyPrice" graphql:"description=The buy price of the title"`
+	Credits             *map[string]*string `json:"credits" graphql:"description=The credits of the title"`
 	headOfficeReference string
 }
 
@@ -536,6 +536,7 @@ func TestBuilder_ComplexDVDStore(t *testing.T) {
 						KeyType: "string",
 						Field: builder.Field{
 							Type:            "string",
+							IsPointer:       true,
 							IncludeInOutput: true,
 						},
 					},

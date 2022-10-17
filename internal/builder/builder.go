@@ -186,7 +186,7 @@ func (b *GraphQLSchemaBuilder) AddMap(name string, t interface{}) *GraphQLSchema
 			Name:            "",
 			Type:            mapType.Name(),
 			IsSlice:         baseType.Elem().Kind() == reflect.Slice,
-			IsPointer:       baseType.Kind() == reflect.Ptr,
+			IsPointer:       baseType.Elem().Kind() == reflect.Ptr,
 			IsStruct:        baseType.Elem().Kind() == reflect.Struct,
 			IsMap:           baseType.Elem().Kind() == reflect.Map,
 			IsEnum:          baseType.Elem().Kind() == reflect.String && !stringInSlice(baseType.Elem().Name(), getGoBuiltInTypeNames()),
