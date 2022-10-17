@@ -15,9 +15,9 @@ package builder_test
 // - test that the builder can handle a non-concrete type (i.e. an interface{})
 // - test that the builder can handle a struct with a field that is a map of
 //   structs
-// - test that the builder can handle a struct with a field that is a slice of
+// X test that the builder can handle a struct with a field that is a slice of
 //   pointers to structs
-// - test that the builder can handle a struct with a field that is a map of
+// X test that the builder can handle a struct with a field that is a map of
 //   pointers to structs
 
 import (
@@ -331,7 +331,7 @@ func TestBuilder_Map(t *testing.T) {
 							},
 							{
 								Name:            "meta",
-								Type:            "string",
+								Type:            "ProjectMeta",
 								IsMap:           true,
 								IncludeInOutput: true,
 								ParsedTag: &tagparser.Tag{
