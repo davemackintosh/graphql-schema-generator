@@ -513,7 +513,7 @@ func TestBuilder_ComplexDVDStore(t *testing.T) {
 							},
 							{
 								Name:            "availableTitles",
-								Type:            "Title",
+								Type:            "DvdStoreAvailableTitles",
 								IsMap:           true,
 								IncludeInOutput: true,
 								ParsedTag: &tagparser.Tag{

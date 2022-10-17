@@ -63,6 +63,31 @@ type GraphQLSchemaBuilder struct {
 	pendingStructTypeNames *[]string
 }
 
+func getGoBuiltInTypeNames() []string {
+	return []string{
+		"bool",
+		"byte",
+		"complex64",
+		"complex128",
+		"error",
+		"float32",
+		"float64",
+		"int",
+		"int8",
+		"int16",
+		"int32",
+		"int64",
+		"rune",
+		"string",
+		"uint",
+		"uint8",
+		"uint16",
+		"uint32",
+		"uint64",
+		"uintptr",
+	}
+}
+
 func NewGraphQLSchemaBuilder(options *GraphQLSchemaBuilderOptions) *GraphQLSchemaBuilder {
 	return &GraphQLSchemaBuilder{
 		Options: options,
@@ -109,32 +134,6 @@ func stringInSlice(a string, list []string) bool {
 }
 
 func (b *GraphQLSchemaBuilder) AddMap(name string, t interface{}) *GraphQLSchemaBuilder {
-	// A slice of all of go's built in types used to check if a type is a built-in.
-	// If it isn't then we can assume it's an enum key strategy and register it as an enum.
-	builtInTypes := [22]string{
-		"bool",
-		"byte",
-		"complex64",
-		"complex128",
-		"error",
-		"float",
-		"float32",
-		"float64",
-		"int",
-		"int8",
-		"int16",
-		"int32",
-		"int64",
-		"rune",
-		"string",
-		"uint",
-		"uint8",
-		"uint16",
-		"uint32",
-		"uint64",
-		"uintptr",
-		"string",
-	}
 	// Get the type the map is to.
 	baseType := reflect.TypeOf(t)
 	if baseType.Kind() == reflect.Ptr {
@@ -173,7 +172,7 @@ func (b *GraphQLSchemaBuilder) AddMap(name string, t interface{}) *GraphQLSchema
 	keyType := baseType.Key().Name()
 
 	// if the key type isn't built in, it's going to be an enum type string.
-	if !stringInSlice(keyType, builtInTypes[:]) {
+	if !stringInSlice(keyType, getGoBuiltInTypeNames()) {
 		b.AddEnum(Enum{
 			Name:   fmt.Sprintf("%s%s", name, keyType),
 			Values: []*EnumKeyPairOptions{},
@@ -186,11 +185,11 @@ func (b *GraphQLSchemaBuilder) AddMap(name string, t interface{}) *GraphQLSchema
 		Field: Field{
 			Name:            "",
 			Type:            mapType.Name(),
-			IsSlice:         reflect.TypeOf(t).Kind() == reflect.Slice,
+			IsSlice:         baseType.Elem().Kind() == reflect.Slice,
 			IsPointer:       reflect.TypeOf(t).Kind() == reflect.Ptr,
-			IsStruct:        false,
-			IsMap:           false,
-			IsEnum:          false,
+			IsStruct:        baseType.Elem().Kind() == reflect.Struct,
+			IsMap:           baseType.Elem().Kind() == reflect.Map,
+			IsEnum:          baseType.Elem().Kind() == reflect.String && !stringInSlice(baseType.Elem().Name(), getGoBuiltInTypeNames()),
 			IncludeInOutput: true,
 			// Maps don't have tags.
 			ParsedTag: nil,
@@ -288,8 +287,7 @@ func (b *GraphQLSchemaBuilder) AddStruct(t interface{}, options *AddStructOption
 
 		// if the fieldTypeName starts with map then we need to get the type of the map.
 		if strings.HasPrefix(fieldTypeName, "map") {
-			parts := strings.Split(fieldTypeName, "]")
-			fieldTypeName = parts[len(parts)-1]
+			fieldTypeName = fmt.Sprintf("%s%s", structName, field.Name)
 		}
 
 		// If the fieldTypeName has a period in it, it's a package name.Type and we only want the type name.
@@ -315,7 +313,7 @@ func (b *GraphQLSchemaBuilder) AddStruct(t interface{}, options *AddStructOption
 			IsStruct:        field.Type.Kind() == reflect.Struct,
 			IsMap:           field.Type.Kind() == reflect.Map,
 			ParsedTag:       tagparser.ParseTag(field.Tag.Get("graphql"), field.Name),
-			IncludeInOutput: field.Tag.Get("graphql") != "-" && field.Tag.Get("json") != "-",
+			IncludeInOutput: field.Tag.Get("graphql") != "-" && field.Tag.Get("json") != "-" && field.IsExported(),
 		})
 	}
 
