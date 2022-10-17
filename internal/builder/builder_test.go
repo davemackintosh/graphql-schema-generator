@@ -504,7 +504,6 @@ func TestBuilder_ComplexDVDStore(t *testing.T) {
 								Name:            "phoneNumber",
 								Type:            "string",
 								IncludeInOutput: true,
-								IsPointer:       true,
 								ParsedTag: &tagparser.Tag{
 									Options: map[string]string{
 										"description": "The phone number of the DVD store",
