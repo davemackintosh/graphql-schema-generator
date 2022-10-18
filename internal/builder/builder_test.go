@@ -397,7 +397,7 @@ type DvdStore struct {
 func TestBuilder_ComplexDVDStore(t *testing.T) {
 	tests := []Test{
 		{
-			name:   "TestBuilder_ComplexDVDStore",
+			name:   "TestBuilder_DVDStore",
 			actual: *builder.NewGraphQLSchemaBuilder(nil).AddStruct(DvdStore{}, nil),
 			expected: builder.GraphQLSchemaBuilder{
 				Options: nil,
@@ -548,6 +548,328 @@ func TestBuilder_ComplexDVDStore(t *testing.T) {
 							IsSlice:         true,
 							IncludeInOutput: true,
 						},
+					},
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, tt.actual)
+		})
+	}
+}
+
+type PlatformRegions string
+
+const (
+	PlatformRegionUS PlatformRegions = "US"
+	PlatformRegionUK PlatformRegions = "UK"
+)
+
+type ProductImage struct {
+	ThumbURL    string `json:"thumbUrl"`
+	Featured    bool   `json:"featured"`
+	ThumbWidth  int    `json:"thumbWidth"`
+	ThumbHeight int    `json:"thumbHeight"`
+	AltText     string `json:"altText"`
+}
+
+type ProductVariant struct {
+	ID               string                                   `json:"id" description:"The ID of the product variant"`
+	PriceExTax       *int                                     `json:"priceExTax" description:"The price of the product variant excluding tax"`
+	AvailableRegions *map[PlatformRegions]*map[string]*string `json:"availableRegions" description:"The available regions of the product"`
+	Images           []*ProductImage                          `json:"images" description:"The images of the product variant"`
+}
+
+type Product struct {
+	ID               string                                   `json:"id" description:"The ID of the product"`
+	Name             string                                   `json:"name" description:"The name of the product"`
+	Description      string                                   `json:"description" description:"The description of the product"`
+	PriceExTax       *int                                     `json:"priceExTax" description:"The price of the product excluding tax"`
+	AvailableRegions *map[PlatformRegions]*map[string]*string `json:"availableRegions" description:"The available regions of the product"`
+	Active           bool                                     `json:"active" description:"The active status of the product"`
+	Variants         *[]*ProductVariant                       `json:"variants" description:"The variants of the product"`
+	Images           *[]*ProductImage                         `json:"images" description:"The images of the product"`
+}
+
+type EcommerceStore struct {
+	ID          string      `json:"id" description:"The ID of the ecommerce store"`
+	Name        string      `json:"name" description:"The name of the ecommerce store"`
+	Address     *string     `json:"address" description:"The address of the ecommerce store"`
+	PhoneNumber *string     `json:"phoneNumber" description:"The phone number of the ecommerce store"`
+	Products    *[]*Product `json:"products" description:"The products of the ecommerce store"`
+}
+
+func TestEcommerceStore(t *testing.T) {
+	tests := []Test{
+		{
+			name:   "EcommerceStore",
+			actual: *builder.NewGraphQLSchemaBuilder(nil).AddStruct(&EcommerceStore{}, nil),
+			expected: builder.GraphQLSchemaBuilder{
+				Structs: []*builder.Struct{
+					{
+						Name: "ProductVariant",
+						Fields: &[]*builder.Field{
+							{
+								Name:            "id",
+								Type:            "string",
+								IncludeInOutput: true,
+								ParsedTag: &tagparser.Tag{
+									Options: map[string]string{
+										"description": "The ID of the product variant",
+									},
+								},
+							},
+							{
+								Name:            "priceExTax",
+								Type:            "int",
+								IsPointer:       true,
+								IncludeInOutput: true,
+								ParsedTag: &tagparser.Tag{
+									Options: map[string]string{
+										"description": "The price of the product variant excluding tax",
+									},
+								},
+							},
+							{
+								Name:            "availableRegions",
+								Type:            "PlatformRegions",
+								IsMap:           true,
+								IsPointer:       true,
+								IncludeInOutput: true,
+								ParsedTag: &tagparser.Tag{
+									Options: map[string]string{
+										"description": "The available regions of the product",
+									},
+								},
+							},
+							{
+								Name:            "images",
+								Type:            "ProductImage",
+								IsSlice:         true,
+								IncludeInOutput: true,
+								ParsedTag: &tagparser.Tag{
+									Options: map[string]string{
+										"description": "The images of the product variant",
+									},
+								},
+							},
+						},
+					},
+					{
+						Name: "ProductImage",
+						Fields: &[]*builder.Field{
+							{
+								Name:            "ThumbURL",
+								Type:            "string",
+								IncludeInOutput: true,
+							},
+							{
+								Name:            "Featured",
+								Type:            "bool",
+								IncludeInOutput: true,
+							},
+							{
+								Name:            "ThumbWidth",
+								Type:            "int",
+								IncludeInOutput: true,
+							},
+							{
+								Name:            "ThumbHeight",
+								Type:            "int",
+								IncludeInOutput: true,
+							},
+							{
+								Name:            "AltText",
+								Type:            "string",
+								IncludeInOutput: true,
+							},
+							{
+								Name:            "origURL",
+								Type:            "string",
+								IncludeInOutput: false,
+							},
+						},
+					},
+					{
+						Name: "Product",
+						Fields: &[]*builder.Field{
+							{
+								Name:            "id",
+								Type:            "string",
+								IncludeInOutput: true,
+								ParsedTag: &tagparser.Tag{
+									Options: map[string]string{
+										"description": "The ID of the product",
+									},
+								},
+							},
+							{
+								Name:            "name",
+								Type:            "string",
+								IncludeInOutput: true,
+								ParsedTag: &tagparser.Tag{
+									Options: map[string]string{
+										"description": "The name of the product",
+									},
+								},
+							},
+							{
+								Name:            "description",
+								Type:            "string",
+								IncludeInOutput: true,
+								ParsedTag: &tagparser.Tag{
+									Options: map[string]string{
+										"description": "The description of the product",
+									},
+								},
+							},
+							{
+								Name:            "priceExTax",
+								Type:            "int",
+								IsPointer:       true,
+								IncludeInOutput: true,
+								ParsedTag: &tagparser.Tag{
+									Options: map[string]string{
+										"description": "The price of the product excluding tax",
+									},
+								},
+							},
+							{
+								Name:            "availableRegions",
+								Type:            "ProductAvailableRegions",
+								IsMap:           true,
+								IsPointer:       true,
+								IncludeInOutput: true,
+								ParsedTag: &tagparser.Tag{
+									Options: map[string]string{
+										"description": "The available regions of the product",
+									},
+								},
+							},
+							{
+								Name:            "active",
+								Type:            "bool",
+								IncludeInOutput: true,
+								ParsedTag: &tagparser.Tag{
+									Options: map[string]string{
+										"description": "The active status of the product",
+									},
+								},
+							},
+							{
+								Name:            "variants",
+								Type:            "ProductVariant",
+								IsSlice:         true,
+								IsPointer:       true,
+								IncludeInOutput: true,
+								ParsedTag: &tagparser.Tag{
+									Options: map[string]string{
+										"description": "The variants of the product",
+									},
+								},
+							},
+							{
+								Name:            "images",
+								Type:            "ProductImage",
+								IsSlice:         true,
+								IsPointer:       true,
+								IncludeInOutput: true,
+								ParsedTag: &tagparser.Tag{
+									Options: map[string]string{
+										"description": "The images of the product",
+									},
+								},
+							},
+						},
+					},
+					{
+						Name: "EcommerceStore",
+						Fields: &[]*builder.Field{
+							{
+								Name:            "id",
+								Type:            "string",
+								IncludeInOutput: true,
+								ParsedTag: &tagparser.Tag{
+									Options: map[string]string{
+										"description": "The ID of the ecommerce store",
+									},
+								},
+							},
+							{
+								Name:            "name",
+								Type:            "string",
+								IncludeInOutput: true,
+								ParsedTag: &tagparser.Tag{
+									Options: map[string]string{
+										"description": "The name of the ecommerce store",
+									},
+								},
+							},
+							{
+								Name:            "address",
+								Type:            "string",
+								IsPointer:       true,
+								IncludeInOutput: true,
+								ParsedTag: &tagparser.Tag{
+									Options: map[string]string{
+										"description": "The address of the ecommerce store",
+									},
+								},
+							},
+							{
+								Name:            "phoneNumber",
+								Type:            "string",
+								IsPointer:       true,
+								IncludeInOutput: true,
+								ParsedTag: &tagparser.Tag{
+									Options: map[string]string{
+										"description": "The phone number of the ecommerce store",
+									},
+								},
+							},
+							{
+								Name:            "products",
+								Type:            "Product",
+								IsSlice:         true,
+								IsPointer:       true,
+								IncludeInOutput: true,
+								ParsedTag: &tagparser.Tag{
+									Options: map[string]string{
+										"description": "The products of the ecommerce store",
+									},
+								},
+							},
+						},
+					},
+				},
+				Maps: []*builder.Map{
+					{
+						Name:    "AvailablePlatformRegions",
+						KeyType: "string",
+						Field: builder.Field{
+							IncludeInOutput: true,
+							IsPointer:       true,
+							Type:            "string",
+						},
+					},
+					{
+						Name:    "EcommerceStoreAvailablePlatformRegions",
+						KeyType: "EcommerceStorePlatformRegions",
+						Field: builder.Field{
+							IsMap:           true,
+							IncludeInOutput: true,
+							IsPointer:       true,
+							Type:            "EcommerceStorePlatformRegionsMap1",
+						},
+					},
+				},
+				Enums: []*builder.Enum{
+					{
+						Name: "EcommerceStorePlatformRegions",
 					},
 				},
 			},
