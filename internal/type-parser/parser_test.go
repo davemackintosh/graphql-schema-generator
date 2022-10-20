@@ -1,8 +1,9 @@
 package typeparser_test
 
 import (
-	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 
 	typeparser "github.com/warpspeedboilerplate/graphql-schema-generator/internal/type-parser"
 )
@@ -19,7 +20,7 @@ func TestMaps(t *testing.T) {
 			name:   "Basic map",
 			actual: typeparser.NewTypeParser(nil).AddMap("StringString", map[string]string{}),
 			expected: &typeparser.TypeParser{
-				Maps: []typeparser.Map{
+				Maps: &[]typeparser.Map{
 					{
 						Name: "StringString",
 						Key: typeparser.TypeDescriptor{
@@ -36,7 +37,7 @@ func TestMaps(t *testing.T) {
 			name:   "Basic map with pointer value",
 			actual: typeparser.NewTypeParser(nil).AddMap("StringPointerString", map[string]*string{}),
 			expected: &typeparser.TypeParser{
-				Maps: []typeparser.Map{
+				Maps: &[]typeparser.Map{
 					{
 						Name: "StringPointerString",
 						Key: typeparser.TypeDescriptor{
@@ -54,7 +55,7 @@ func TestMaps(t *testing.T) {
 			name:   "Map with pointer key",
 			actual: typeparser.NewTypeParser(nil).AddMap("PointerStringString", map[*string]string{}),
 			expected: &typeparser.TypeParser{
-				Maps: []typeparser.Map{
+				Maps: &[]typeparser.Map{
 					{
 						Name: "PointerStringString",
 						Key: typeparser.TypeDescriptor{
@@ -72,7 +73,7 @@ func TestMaps(t *testing.T) {
 			name:   "Map with pointer key and value",
 			actual: typeparser.NewTypeParser(nil).AddMap("PointerStringPointerString", map[*string]*string{}),
 			expected: &typeparser.TypeParser{
-				Maps: []typeparser.Map{
+				Maps: &[]typeparser.Map{
 					{
 						Name: "PointerStringPointerString",
 						Key: typeparser.TypeDescriptor{
@@ -91,7 +92,7 @@ func TestMaps(t *testing.T) {
 			name:   "Map with map value",
 			actual: typeparser.NewTypeParser(nil).AddMap("StringMapStringString", map[string]map[string]string{}),
 			expected: &typeparser.TypeParser{
-				Maps: []typeparser.Map{
+				Maps: &[]typeparser.Map{
 					{
 						Name: "StringMapStringStringMap1",
 						Key: typeparser.TypeDescriptor{
@@ -119,9 +120,7 @@ func TestMaps(t *testing.T) {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
-			if !reflect.DeepEqual(test.actual, test.expected) {
-				t.Errorf("got %v, want %v", test.actual, test.expected)
-			}
+			assert.Equal(t, test.expected, test.actual)
 		})
 	}
 }

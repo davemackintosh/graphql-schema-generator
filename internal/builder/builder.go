@@ -88,6 +88,14 @@ func getGoBuiltInTypeNames() []string {
 	}
 }
 
+func digTypeFromPtrOrSlice(t reflect.Type) reflect.Type {
+	for t.Kind() == reflect.Ptr || t.Kind() == reflect.Slice {
+		t = t.Elem()
+	}
+
+	return t
+}
+
 func NewGraphQLSchemaBuilder(options *GraphQLSchemaBuilderOptions) *GraphQLSchemaBuilder {
 	return &GraphQLSchemaBuilder{
 		Options: options,
@@ -232,7 +240,7 @@ func (b *GraphQLSchemaBuilder) AddStruct(t interface{}, options *AddStructOption
 
 	for i := 0; i < structType.NumField(); i++ {
 		field := structType.Type().Field(i)
-		fieldType := field.Type
+		fieldType := digTypeFromPtrOrSlice(field.Type)
 		fieldTypeName := fieldType.String()
 
 		// If the field is a pointer, get the type it points to.
@@ -242,7 +250,7 @@ func (b *GraphQLSchemaBuilder) AddStruct(t interface{}, options *AddStructOption
 		}
 
 		// If the field is a slice of a struct, we need to get the struct and add it.
-		if structType.Field(i).Kind() == reflect.Slice && structType.Field(i).Type().Elem().Kind() == reflect.Struct {
+		if fieldType.Kind() == reflect.Struct {
 			target := reflect.New(structType.Field(i).Type().Elem()).Elem()
 			embeddedName := fmt.Sprintf("%s_%s", structName, field.Name)
 
