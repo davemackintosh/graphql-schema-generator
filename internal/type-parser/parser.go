@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/warpspeedboilerplate/graphql-schema-generator/internal/ptr"
 	tagparser "github.com/warpspeedboilerplate/graphql-schema-generator/internal/tag-parser"
 )
+
+const unknownMapNameTemplate = "Map%d"
 
 type TypeDescriptor struct {
 	Name            *string
@@ -75,41 +76,58 @@ func NewTypeParser(_ *interface{}) *TypeParser {
 	return false
 }*/
 
-func (t *TypeParser) internalAddMap(name string, m reflect.Type, depth *int) *TypeParser {
-	if depth == nil {
-		depth = ptr.Of(0)
-	}
-	// if this initial type is a pointer, dig deeper.
+func (t *TypeParser) internalAddMap(name string, m reflect.Type, depth int) *TypeParser {
+	var mapValueTypeName string
+
+	key := TypeDescriptor{}
+	val := TypeDescriptor{}
+
 	if m.Kind() == reflect.Ptr {
 		m = m.Elem()
 	}
 
 	if name == "" {
-		name = fmt.Sprintf("Map%d", *depth)
+		name = fmt.Sprintf(unknownMapNameTemplate, depth)
 	}
 
 	if m.Kind() != reflect.Map {
 		panic(fmt.Sprintf("AddMap must be called with a map type, '%s' is a '%s'", name, m.Kind().String()))
 	}
 
-	typeType := m.Elem()
-	typeName := typeType.Name()
+	mapKeyType := m.Key()
+	mapValueType := m.Elem()
+
+	// First we check if the key and value are pointers and if so, we unroll them.
+	if mapValueType.Kind() == reflect.Ptr {
+		val.IsPointer = true
+		mapValueType = mapValueType.Elem()
+	}
+
+	if mapKeyType.Kind() == reflect.Ptr {
+		key.IsPointer = true
+		mapKeyType = mapKeyType.Elem()
+	}
+
+	// Now we check if the value is a slice and if so, we unroll it.
+	if mapValueType.Kind() == reflect.Slice {
+		val.IsSlice = true
+		mapValueType = mapValueType.Elem()
+	}
 
 	// If the elem is a map then we need to add that map too
-	// and increase the depth counter.
-	// First check if it's a pointer.
-	if typeType.Kind() == reflect.Ptr {
-		typeType = typeType.Elem()
+	// At this point we know that the type is a map so we also
+	// increase the depth counter and generate a new name for the map.
+	if mapValueType.Kind() == reflect.Map {
+		mapName := fmt.Sprintf(unknownMapNameTemplate, depth+1)
+		mapValueTypeName = fmt.Sprintf("%s%s", name, mapName)
+
+		t.internalAddMap(fmt.Sprintf("%s%s", name, mapName), mapValueType, depth+1)
+	} else {
+		mapValueTypeName = mapValueType.Kind().String()
 	}
 
-	if typeType.Kind() == reflect.Map {
-		mapName := fmt.Sprintf("Map%d", *depth+1)
-		typeName = fmt.Sprintf("%s%s", name, mapName)
-		// Send the interface of the type to the AddMap function
-		t.internalAddMap(fmt.Sprintf("%s%s", name, mapName), typeType, ptr.Of(*depth+1))
-	} else {
-		typeName = typeType.Kind().String()
-	}
+	key.Type = mapKeyType.Kind().String()
+	val.Type = mapValueTypeName
 
 	if t.Maps == nil {
 		t.Maps = &[]Map{}
@@ -117,14 +135,8 @@ func (t *TypeParser) internalAddMap(name string, m reflect.Type, depth *int) *Ty
 
 	*t.Maps = append(*t.Maps, Map{
 		Name: name,
-		Key: TypeDescriptor{
-			Type:      m.Key().Name(),
-			IsPointer: m.Key().Kind() == reflect.Ptr,
-		},
-		Val: TypeDescriptor{
-			Type:      typeName,
-			IsPointer: m.Elem().Kind() == reflect.Ptr,
-		},
+		Key:  key,
+		Val:  val,
 	})
 
 	return t
@@ -142,5 +154,5 @@ func (t *TypeParser) internalAddMap(name string, m reflect.Type, depth *int) *Ty
 func (t *TypeParser) AddMap(name string, m interface{}) *TypeParser {
 	mapType := reflect.TypeOf(m)
 
-	return t.internalAddMap(name, mapType, nil)
+	return t.internalAddMap(name, mapType, 0)
 }
