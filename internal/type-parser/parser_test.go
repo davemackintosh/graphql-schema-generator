@@ -5,9 +5,9 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/warpspeedboilerplate/graphql-schema-generator/internal/ptr"
-	tagparser "github.com/warpspeedboilerplate/graphql-schema-generator/internal/tag-parser"
-	typeparser "github.com/warpspeedboilerplate/graphql-schema-generator/internal/type-parser"
+	tagparser "github.com/warpspeed-cloud/graphql-schema-generator/internal/graphql-tag-parser"
+	"github.com/warpspeed-cloud/graphql-schema-generator/internal/ptr"
+	typeparser "github.com/warpspeed-cloud/graphql-schema-generator/internal/type-parser"
 )
 
 type Test struct {
@@ -137,7 +137,7 @@ const (
 type User struct {
 	ID        string         `json:"id" graphql:"description=The ID of the user"`
 	Username  string         `json:"username" graphql:"description=The username of the user,decorators=[+unique()]"`
-	Password  string         `json:"-"` // This field should not appear in the graphql schema.
+	Password  string         `json:"-"` // This field should not appear in the graphql schema but should appear in the AST.
 	Email     *string        `json:"email" graphql:"description=The email of the user"`
 	Phone     *string        `json:"phone" graphql:"description=The phone number of the user"`
 	Roles     []Roles        `json:"roles" graphql:"description=The roles of the user"`
@@ -156,7 +156,7 @@ type UserDocument struct {
 
 func TestBuilderStructSuite(t *testing.T) {
 	expectedMeta := typeparser.Struct{
-		Name: "UserDocument_Meta",
+		Name: "Struct1",
 		Fields: &[]typeparser.TypeDescriptor{
 			{
 				Name:            ptr.Of("author"),
@@ -217,7 +217,7 @@ func TestBuilderStructSuite(t *testing.T) {
 			},
 			{
 				Name:            ptr.Of("meta"),
-				Type:            "UserDocument_Meta",
+				Type:            "UserDocument_Struct1",
 				IsPointer:       false,
 				IncludeInOutput: true,
 				IsStruct:        true,
@@ -658,6 +658,65 @@ func TestEcommerceStore(t *testing.T) {
 			expected: &typeparser.TypeParser{
 				Structs: &[]typeparser.Struct{
 					{
+						Name: "EcommerceStore",
+						Fields: &[]typeparser.TypeDescriptor{
+							{
+								Name:            ptr.Of("id"),
+								Type:            "string",
+								IncludeInOutput: true,
+								ParsedTag: &tagparser.Tag{
+									Options: map[string]string{
+										"description": "The ID of the ecommerce store",
+									},
+								},
+							},
+							{
+								Name:            ptr.Of("name"),
+								Type:            "string",
+								IncludeInOutput: true,
+								ParsedTag: &tagparser.Tag{
+									Options: map[string]string{
+										"description": "The name of the ecommerce store",
+									},
+								},
+							},
+							{
+								Name:            ptr.Of("address"),
+								Type:            "string",
+								IsPointer:       true,
+								IncludeInOutput: true,
+								ParsedTag: &tagparser.Tag{
+									Options: map[string]string{
+										"description": "The address of the ecommerce store",
+									},
+								},
+							},
+							{
+								Name:            ptr.Of("phoneNumber"),
+								Type:            "string",
+								IsPointer:       true,
+								IncludeInOutput: true,
+								ParsedTag: &tagparser.Tag{
+									Options: map[string]string{
+										"description": "The phone number of the ecommerce store",
+									},
+								},
+							},
+							{
+								Name:            ptr.Of("products"),
+								Type:            "Product",
+								IsSlice:         true,
+								IsPointer:       true,
+								IncludeInOutput: true,
+								ParsedTag: &tagparser.Tag{
+									Options: map[string]string{
+										"description": "The products of the ecommerce store",
+									},
+								},
+							},
+						},
+					},
+					{
 						Name: "ProductVariant",
 						Fields: &[]typeparser.TypeDescriptor{
 							{
@@ -828,65 +887,6 @@ func TestEcommerceStore(t *testing.T) {
 								ParsedTag: &tagparser.Tag{
 									Options: map[string]string{
 										"description": "The images of the product",
-									},
-								},
-							},
-						},
-					},
-					{
-						Name: "EcommerceStore",
-						Fields: &[]typeparser.TypeDescriptor{
-							{
-								Name:            ptr.Of("id"),
-								Type:            "string",
-								IncludeInOutput: true,
-								ParsedTag: &tagparser.Tag{
-									Options: map[string]string{
-										"description": "The ID of the ecommerce store",
-									},
-								},
-							},
-							{
-								Name:            ptr.Of("name"),
-								Type:            "string",
-								IncludeInOutput: true,
-								ParsedTag: &tagparser.Tag{
-									Options: map[string]string{
-										"description": "The name of the ecommerce store",
-									},
-								},
-							},
-							{
-								Name:            ptr.Of("address"),
-								Type:            "string",
-								IsPointer:       true,
-								IncludeInOutput: true,
-								ParsedTag: &tagparser.Tag{
-									Options: map[string]string{
-										"description": "The address of the ecommerce store",
-									},
-								},
-							},
-							{
-								Name:            ptr.Of("phoneNumber"),
-								Type:            "string",
-								IsPointer:       true,
-								IncludeInOutput: true,
-								ParsedTag: &tagparser.Tag{
-									Options: map[string]string{
-										"description": "The phone number of the ecommerce store",
-									},
-								},
-							},
-							{
-								Name:            ptr.Of("products"),
-								Type:            "Product",
-								IsSlice:         true,
-								IsPointer:       true,
-								IncludeInOutput: true,
-								ParsedTag: &tagparser.Tag{
-									Options: map[string]string{
-										"description": "The products of the ecommerce store",
 									},
 								},
 							},

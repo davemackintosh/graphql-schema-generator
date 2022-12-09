@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	builder "github.com/warpspeedboilerplate/graphql-schema-generator/internal/builder"
+	builder "github.com/warpspeed-cloud/graphql-schema-generator/internal/builder"
 )
 
 type Roles uint

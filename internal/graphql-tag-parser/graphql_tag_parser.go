@@ -9,7 +9,7 @@ type Tag struct {
 	Options map[string]string
 }
 
-// Get the tag from a Field.
+// GetTagFromField Get the tag from a Field.
 func GetTagFromField(field reflect.StructField) *Tag {
 	tag := field.Tag.Get("graphql")
 
@@ -20,10 +20,10 @@ func GetTagFromField(field reflect.StructField) *Tag {
 	return ParseTag(tag, field.Name)
 }
 
-// Parse a tag.
+// ParseTag Parse a tag.
 func ParseTag(tag string, fieldName string) *Tag { //nolint: cyclop
 	// Loop over each character and assemble a map of tags,
-	// we do this because decorators and comments can contain commas
+	// we do this because decorators and comments can contain commas,
 	// and we don't want to split on those
 	tagOptions := make(map[string]string)
 

@@ -1,4 +1,4 @@
-module github.com/warpspeedboilerplate/graphql-schema-generator
+module github.com/warpspeed-cloud/graphql-schema-generator
 
 go 1.18
 

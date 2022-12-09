@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"reflect"
 
-	tagparser "github.com/warpspeedboilerplate/graphql-schema-generator/internal/tag-parser"
+	tagparser "github.com/warpspeed-cloud/graphql-schema-generator/internal/graphql-tag-parser"
+	jsontagparser "github.com/warpspeed-cloud/graphql-schema-generator/internal/json-tag-parser"
 )
 
 const (
@@ -157,7 +158,7 @@ func (t *TypeParser) internalAddMap(name string, m reflect.Type, depth int) *Typ
 // internalAddStruct loops over each field in the struct and add it to the schema
 // recursively. It will unroll pointers and slices to find the underlying type
 // automatically.
-func (t *TypeParser) internalAddStruct(m reflect.Type, depth int) { //nolint: cyclop
+func (t *TypeParser) internalAddStruct(m reflect.Type, depth int) {
 	newStruct := Struct{}
 
 	if m.Kind() == reflect.Ptr {
@@ -183,16 +184,26 @@ func (t *TypeParser) internalAddStruct(m reflect.Type, depth int) { //nolint: cy
 	*t.pendingStructTypeNames = append(*t.pendingStructTypeNames, newStruct.Name)
 
 	// Create a new slice to hold the fields for this struct.
-	fields := []TypeDescriptor{}
+	var fields []TypeDescriptor
 
 	// Loop over each field in the struct and add it to the schema.
 	for i := 0; i < m.NumField(); i++ {
-		fieldName := m.Field(i).Name
+		field := m.Field(i)
+		jsonTag := jsontagparser.Parse(field.Tag.Get("json"))
+
+		var fieldName string
+		if jsonTag == nil || jsonTag.Name == "" {
+			fieldName = field.Name
+		} else {
+			fieldName = jsonTag.Name
+		}
+
+		graphqlTag := tagparser.ParseTag(m.Field(i).Tag.Get("graphql"), fieldName)
 		newField := TypeDescriptor{
 			Name:      &fieldName,
-			ParsedTag: tagparser.ParseTag(m.Field(i).Tag.Get("json"), fieldName),
+			ParsedTag: graphqlTag,
 		}
-		field := m.Field(i)
+
 		fieldType := field.Type
 
 		// First we check if the field is a pointer and if so, we unroll it.
@@ -211,20 +222,30 @@ func (t *TypeParser) internalAddStruct(m reflect.Type, depth int) { //nolint: cy
 		// At this point we know that the type is a struct so we also
 		// increase the depth counter and generate a new name for the struct.
 		if fieldType.Kind() == reflect.Struct {
-			newField.Type = fmt.Sprintf("%s%s", newStruct.Name, fieldType.Name())
+			if fieldType.Name() == "" {
+				newField.Type = fmt.Sprintf("%s%s", newStruct.Name, fmt.Sprintf(unnamedStructTemplate, depth+1))
+			} else {
+				newField.Type = fieldType.Name()
+			}
 			t.internalAddStruct(fieldType, depth+1)
 
-			newField.IsStruct = true
+			if !newField.IsSlice {
+				newField.IsStruct = true
+			}
 		} else if fieldType.Kind() == reflect.Map {
 			t.internalAddMap(fmt.Sprintf("%s%s", newStruct.Name, fieldType.Name()), fieldType, 0)
 
 			newField.Type = fmt.Sprintf("%s%s", newStruct.Name, fieldType.Name())
+			newField.IsMap = true
+		} else {
+			newField.Type = fieldType.Kind().String()
 		}
+
+		newField.IncludeInOutput = field.IsExported() && (jsonTag == nil || !jsonTag.Private)
 
 		fields = append(fields, newField)
 	}
 
-	// Add the struct to the schema.
 	if t.Structs == nil {
 		t.Structs = &[]Struct{}
 	}

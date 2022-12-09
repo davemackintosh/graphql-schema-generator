@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	tagparser "github.com/warpspeedboilerplate/graphql-schema-generator/internal/tag-parser"
+	tagparser "github.com/warpspeed-cloud/graphql-schema-generator/internal/graphql-tag-parser"
 )
 
 type TestStruct struct {

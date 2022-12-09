@@ -23,6 +23,8 @@
 			"unused"
 		],
 		"disable": [
+			"cyclop",
+			"gocognit",
 			"ifshort",
 			"gci",
 			"deadcode",
