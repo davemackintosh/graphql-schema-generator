@@ -34,6 +34,7 @@ func Parse(tag string) *JSONTag {
 	// If the tag specifies that it should be omitted in the output
 	// then we should return nothing
 	if parts[0] == "-" {
+		result.Name = ""
 		result.Private = true
 	} else {
 		// Otherwise...

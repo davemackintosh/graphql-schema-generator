@@ -67,7 +67,7 @@ func NewTypeParser(_ *interface{}) *TypeParser {
 }
 
 // A function that returns a boolean whether a struct exists by this name or is pending.
-func (t TypeParser) structExistsAndIsntPending(name string) bool {
+func (t *TypeParser) structExistsAndIsntPending(name string) bool {
 	if t.pendingStructTypeNames != nil {
 		for _, pendingName := range *t.pendingStructTypeNames {
 			if pendingName == name {
@@ -128,12 +128,16 @@ func (t *TypeParser) internalAddMap(name string, m reflect.Type, depth int) *Typ
 	// If the elem is a map then we need to add that map too
 	// At this point we know that the type is a map so we also
 	// increase the depth counter and generate a new name for the map.
-	if mapValueType.Kind() == reflect.Map {
+	switch mapValueType.Kind() {
+	case reflect.Map:
 		mapName := fmt.Sprintf(unnamedMapTemplate, depth+1)
 		mapValueTypeName = fmt.Sprintf("%s%s", name, mapName)
 
 		t.internalAddMap(fmt.Sprintf("%s%s", name, mapName), mapValueType, depth+1)
-	} else {
+	case reflect.Struct:
+		mapValueTypeName = mapValueType.Name()
+		t.internalAddStruct(mapValueType, 0)
+	default:
 		mapValueTypeName = mapValueType.Kind().String()
 	}
 
@@ -218,10 +222,13 @@ func (t *TypeParser) internalAddStruct(m reflect.Type, depth int) {
 			newField.IsSlice = true
 		}
 
+		fieldKind := fieldType.Kind()
+
 		// If the field is a struct then we need to add that struct too
 		// At this point we know that the type is a struct so we also
 		// increase the depth counter and generate a new name for the struct.
-		if fieldType.Kind() == reflect.Struct {
+		switch fieldKind { //nolint: exhaustive
+		case reflect.Struct:
 			if fieldType.Name() == "" {
 				newField.Type = fmt.Sprintf("%s%s", newStruct.Name, fmt.Sprintf(unnamedStructTemplate, depth+1))
 			} else {
@@ -232,12 +239,17 @@ func (t *TypeParser) internalAddStruct(m reflect.Type, depth int) {
 			if !newField.IsSlice {
 				newField.IsStruct = true
 			}
-		} else if fieldType.Kind() == reflect.Map {
-			t.internalAddMap(fmt.Sprintf("%s%s", newStruct.Name, fieldType.Name()), fieldType, 0)
+		case reflect.Map:
+			newFieldTypeName := fieldType.Name()
+			if newFieldTypeName == "" {
+				newFieldTypeName = fmt.Sprintf("%s%s", newStruct.Name, field.Name)
+			}
 
-			newField.Type = fmt.Sprintf("%s%s", newStruct.Name, fieldType.Name())
+			t.internalAddMap(fmt.Sprintf("%s%s", newFieldTypeName, fieldType.Name()), fieldType, 0)
+
+			newField.Type = newFieldTypeName
 			newField.IsMap = true
-		} else {
+		default:
 			newField.Type = fieldType.Kind().String()
 		}
 
@@ -288,7 +300,7 @@ func (t *TypeParser) AddMap(name string, m interface{}) *TypeParser {
 // depth is calculated automatically.
 //
 // If you don't pass a struct type in (say a map, reflect.Type, etc.) then it will panic.
-func (t *TypeParser) AddStruct(s interface{}, options *AddStructOptions) *TypeParser {
+func (t *TypeParser) AddStruct(s any, options *AddStructOptions) *TypeParser {
 	if options == nil {
 		options = &AddStructOptions{}
 	}

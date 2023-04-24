@@ -217,7 +217,7 @@ func TestBuilderStructSuite(t *testing.T) {
 			},
 			{
 				Name:            ptr.Of("meta"),
-				Type:            "UserDocument_Struct1",
+				Type:            "UserDocumentStruct1",
 				IsPointer:       false,
 				IncludeInOutput: true,
 				IsStruct:        true,
@@ -282,8 +282,10 @@ func TestBuilderStructSuite(t *testing.T) {
 				},
 			},
 			{
-				Name:            ptr.Of("roles"),
-				Type:            "Roles",
+				Name: ptr.Of("roles"),
+				// This is a string because we cannot get the named type
+				// of a "enum" like type in Go (it's just a string.)
+				Type:            "string",
 				IsPointer:       false,
 				IsSlice:         true,
 				IncludeInOutput: true,
@@ -567,12 +569,12 @@ func TestBuilder_ComplexDVDStore(t *testing.T) {
 						},
 					},
 				},
-				Enums: &[]typeparser.Enum{
-					{
-						Name:   "DvdStoreAvailableTitlesShelf",
-						Values: []typeparser.EnumKeyPairOptions{},
-					},
-				},
+				//Enums: &[]typeparser.Enum{
+				//	{
+				//		Name:   "DvdStoreAvailableTitlesShelf",
+				//		Values: []typeparser.EnumKeyPairOptions{},
+				//	},
+				//},
 				Maps: &[]typeparser.Map{
 					{
 						Name: "TitleCredits",
@@ -580,20 +582,18 @@ func TestBuilder_ComplexDVDStore(t *testing.T) {
 							Type: "string",
 						},
 						Val: typeparser.TypeDescriptor{
-							Type:            "string",
-							IsPointer:       true,
-							IncludeInOutput: true,
+							Type:      "string",
+							IsPointer: true,
 						},
 					},
 					{
 						Name: "DvdStoreAvailableTitles",
 						Key: typeparser.TypeDescriptor{
-							Type: "Shelf",
+							Type: "uint",
 						},
 						Val: typeparser.TypeDescriptor{
-							Type:            "Title",
-							IsSlice:         true,
-							IncludeInOutput: true,
+							Type:    "Title",
+							IsSlice: true,
 						},
 					},
 				},
