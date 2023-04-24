@@ -28,9 +28,13 @@ func Test_JSONTagParser(t *testing.T) {
 			},
 		},
 		{
-			name:     "none",
-			input:    "-",
-			expected: nil,
+			name:  "none",
+			input: "-",
+			expected: &jsontagparser.JSONTag{
+				Name:       "",
+				Private:    true,
+				TargetType: jsontagparser.String,
+			},
 		},
 		{
 			name:  "one, omitempty",
